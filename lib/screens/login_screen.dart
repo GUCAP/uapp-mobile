@@ -2,8 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../core/app_state.dart';
-import '../data/mock_data.dart';
-import '../models/user.dart';
 import 'shell_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,24 +13,51 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  final _emailCtrl    = TextEditingController(text: 'rifatsf101@gmail.com');
+  final _emailCtrl    = TextEditingController(text: 'rahman@gmail.com');
   final _passwordCtrl = TextEditingController();
-  bool _obscure    = true;
-  bool _loading    = false;
+  bool _obscure = true;
+  bool _loading = false;
   String? _error;
-  bool _showSwitcher = false;
 
   late AnimationController _entryCtrl;
   late Animation<double>   _entryAnim;
 
-  // Demo accounts — email → userId
-  final _accounts = {
-    'shamim@uapp.uk':    'u-shamim',
-    'andreea@uapp.uk':   'u-andreea',
-    'jennifer@uapp.uk':  'u-jennifer',
-    'raj@uapp.uk':       'u-raj',
-    'nur@uapp.uk':       'u-nur',
-    'rifatsf101@gmail.com': 'u-shamim',  // demo default
+  // Each user has their own email — no Switch Account needed
+  static const _accounts = {
+    // Shamim Rahman (CEO / System Admin)
+    'rahman@gmail.com':   'u-shamim',
+    // Olivia Becker (Acme CEO)
+    'olivia@gmail.com':   'u-acme-admin',
+    // Md Shamim (Branch Manager Sales)
+    'shamim@gmail.com':   'u-md-shamim',
+    // Andreea Cinpoi (Sales Manager)
+    'andreea@gmail.com':  'u-andreea',
+    // Laura Tomova (Sales Team Leader)
+    'laura@gmail.com':    'u-laura',
+    // Tousif Sadman (Consultant)
+    'tousif@gmail.com':   'u-tousif',
+    // Riad Hossain (Consultant)
+    'riad@gmail.com':     'u-riad',
+    // Mihadul Islam (Consultant)
+    'mihadul@gmail.com':  'u-mihadul',
+    // Asad Fahad (Consultant)
+    'asad@gmail.com':     'u-asad',
+    // Jennifer Aboje (Branch Manager Admission)
+    'jennifer@gmail.com': 'u-jennifer',
+    // Raj Ahmed (Global Admission Manager)
+    'raj@gmail.com':      'u-raj',
+    // Nur Mohammad (Admission Manager)
+    'nur@gmail.com':      'u-nur',
+    // Md Siam (Admission Officer)
+    'siam@gmail.com':     'u-siam',
+    // Md Rakib (Admission Officer)
+    'rakib@gmail.com':    'u-rakib',
+    // Nadia Ahmed (Admission Officer)
+    'nadia@gmail.com':    'u-nadia',
+    // Thomas Fletcher (Admission Officer)
+    'thomas@gmail.com':   'u-testa',
+    // Md Roni (Admission Officer)
+    'roni@gmail.com':     'u-roni',
   };
 
   @override
@@ -66,19 +91,8 @@ class _LoginScreenState extends State<LoginScreen>
         ),
       );
     } else {
-      setState(() { _error = 'Invalid credentials. Use a demo account below.'; _loading = false; });
+      setState(() { _error = 'Invalid email. Try rahman@gmail.com for the CEO account.'; _loading = false; });
     }
-  }
-
-  void _switchAccount(AppUser user) {
-    currentUserIdNotifier.value = user.id;
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const ShellScreen(),
-        transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
-        transitionDuration: const Duration(milliseconds: 400),
-      ),
-    );
   }
 
   @override
@@ -266,56 +280,6 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 28),
-
-                          // Account switcher
-                          GestureDetector(
-                            onTap: () => setState(() => _showSwitcher = !_showSwitcher),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.04),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.09)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.swap_horiz_rounded, color: Color(0xFF00D4D4), size: 20),
-                                  const SizedBox(width: 12),
-                                  const Expanded(
-                                    child: Text('Switch Account',
-                                        style: TextStyle(color: Colors.white, fontSize: 14.5, fontWeight: FontWeight.w600)),
-                                  ),
-                                  AnimatedRotation(
-                                    turns: _showSwitcher ? 0.5 : 0,
-                                    duration: const Duration(milliseconds: 200),
-                                    child: Icon(Icons.keyboard_arrow_down_rounded,
-                                        color: Colors.white.withValues(alpha: 0.4), size: 20),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          AnimatedSize(
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutCubic,
-                            child: _showSwitcher
-                                ? Column(
-                                    children: [
-                                      const SizedBox(height: 10),
-                                      ...kUsers
-                                          .where((u) => u.type != UserType.student)
-                                          .take(6)
-                                          .map((u) => _AccountTile(
-                                                user: u,
-                                                isActive: currentUserIdNotifier.value == u.id,
-                                                onTap: () => _switchAccount(u),
-                                              )),
-                                    ],
-                                  )
-                                : const SizedBox.shrink(),
                           ),
                           const SizedBox(height: 32),
                         ],
@@ -528,53 +492,3 @@ class _LoginField extends StatelessWidget {
   }
 }
 
-// ── Account tile ──────────────────────────────────────────────
-class _AccountTile extends StatelessWidget {
-  final AppUser user;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _AccountTile({required this.user, required this.isActive, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF00D4D4).withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.03),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isActive ? const Color(0xFF00D4D4).withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.07),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38, height: 38,
-              decoration: BoxDecoration(color: user.color, shape: BoxShape.circle),
-              alignment: Alignment.center,
-              child: Text(user.initials, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(user.name, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                  Text(user.role, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 11.5)),
-                ],
-              ),
-            ),
-            if (isActive)
-              const Icon(Icons.check_circle_rounded, color: Color(0xFF00D4D4), size: 20)
-            else
-              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withValues(alpha: 0.2), size: 13),
-          ],
-        ),
-      ),
-    );
-  }
-}
