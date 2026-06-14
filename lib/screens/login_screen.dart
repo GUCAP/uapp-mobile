@@ -153,35 +153,35 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
 
-                    // Logo + student image header area
+                    // Header: logo left + student right (no clipping, proper face visible)
                     SizedBox(
                       width: w,
-                      height: h * 0.32,
+                      height: h * 0.38,
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          // Student image — right side, extends from top, behind logo
+                          // Student image — right half, full image, head fully visible
                           Positioned(
                             right: 0,
-                            top: 0,
-                            bottom: 0,
+                            top: -20,  // extend slightly above so head isn't cut
                             child: Opacity(
-                              opacity: 0.65,
+                              opacity: 0.7,
                               child: Image.asset(
                                 'assets/images/login_image_men.png',
-                                width: w * 0.48,
+                                width: w * 0.50,
+                                height: h * 0.40,
                                 fit: BoxFit.cover,
-                                alignment: Alignment.topCenter,
+                                alignment: Alignment.topRight,
                               ),
                             ),
                           ),
-                          // Real UAPP logo (orange cap + white U) — left-centre
+                          // UAPP logo (logo_app.png — fully transparent bg, orange+teal)
                           Positioned(
-                            left: w * 0.08,
-                            bottom: 10,
+                            left: w * 0.04,
+                            bottom: 20,
                             child: Image.asset(
-                              'assets/images/logo_color.png',
-                              width: w * 0.42,
+                              'assets/images/logo_app.png',
+                              width: w * 0.50,
                               fit: BoxFit.contain,
                             ),
                           ),
@@ -216,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen>
                           const SizedBox(height: 8),
                           _LoginField(
                             controller: _emailCtrl,
-                            hint: 'rifatsf101@gmail.com',
+                            hint: 'Enter your email',
                             keyboardType: TextInputType.emailAddress,
                           ),
                           const SizedBox(height: 18),
@@ -279,35 +279,6 @@ class _LoginScreenState extends State<LoginScreen>
                               child: _loading
                                   ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                                   : const Text('Log In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-
-                          // Or divider
-                          Row(children: [
-                            Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Text('Or', style: TextStyle(color: Colors.white.withValues(alpha: 0.35), fontSize: 13)),
-                            ),
-                            Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
-                          ]),
-                          const SizedBox(height: 20),
-
-                          // Don't have account
-                          Center(
-                            child: GestureDetector(
-                              onTap: () {},
-                              child: RichText(
-                                text: const TextSpan(
-                                  style: TextStyle(fontSize: 14),
-                                  children: [
-                                    TextSpan(text: "Don't Have An Account?  ", style: TextStyle(color: Colors.white54)),
-                                    TextSpan(text: 'Sign In',
-                                        style: TextStyle(color: Color(0xFF00D4D4), fontWeight: FontWeight.w700)),
-                                  ],
-                                ),
-                              ),
                             ),
                           ),
                           const SizedBox(height: 32),
