@@ -18,7 +18,6 @@ class NewsFeedScreen extends StatefulWidget {
 class _NewsFeedScreenState extends State<NewsFeedScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _showMissed = true;
 
   List<FeedPost> _filtered(String scope) {
     switch (scope) {
@@ -68,12 +67,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _PostList(
-                    posts: _filtered('for_you'),
-                    onUpdate: () => setState(() {}),
-                    showMissed: _showMissed,
-                    onDismissMissed: () => setState(() => _showMissed = false),
-                  ),
+                  _PostList(posts: _filtered('for_you'), onUpdate: () => setState(() {})),
                   _PostList(posts: _filtered('team'), onUpdate: () => setState(() {})),
                   _PostList(posts: _filtered('company'), onUpdate: () => setState(() {})),
                   _PostList(
@@ -166,8 +160,6 @@ class _PostList extends StatelessWidget {
   final String? emptyLabel;
   final String? emptySubtitle;
   final IconData? emptyIcon;
-  final bool showMissed;
-  final VoidCallback? onDismissMissed;
 
   const _PostList({
     required this.posts,
@@ -175,11 +167,7 @@ class _PostList extends StatelessWidget {
     this.emptyLabel,
     this.emptySubtitle,
     this.emptyIcon,
-    this.showMissed = false,
-    this.onDismissMissed,
   });
-
-  List<FeedPost> get _missedPosts => posts.where((p) => p.priority == PostPriority.high || p.isPinned).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -189,10 +177,7 @@ class _PostList extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
             width: 80, height: 80,
-            decoration: BoxDecoration(
-              color: c.surfaceElevated,
-              borderRadius: BorderRadius.circular(20),
-            ),
+            decoration: BoxDecoration(color: c.surfaceElevated, borderRadius: BorderRadius.circular(20)),
             alignment: Alignment.center,
             child: Icon(emptyIcon ?? Icons.newspaper_rounded, color: c.textMuted, size: 40),
           ),
@@ -206,109 +191,14 @@ class _PostList extends StatelessWidget {
       );
     }
 
-    final missed = showMissed && _missedPosts.isNotEmpty;
-
     return RefreshIndicator(
       color: AppColors.primary,
-      onRefresh: () async {
-        await Future.delayed(const Duration(seconds: 1));
-      },
+      onRefresh: () async => Future.delayed(const Duration(seconds: 1)),
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-        itemCount: posts.length + (missed ? 1 : 0),
+        itemCount: posts.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (ctx, i) {
-          if (missed && i == 0) {
-            return _WhatYouMissedCard(posts: _missedPosts, onDismiss: onDismissMissed ?? () {});
-          }
-          final idx = missed ? i - 1 : i;
-          return _PostCard(post: posts[idx], onUpdate: onUpdate);
-        },
-      ),
-    );
-  }
-}
-
-// ── What You Missed Carousel ──────────────────────────────────
-class _WhatYouMissedCard extends StatelessWidget {
-  final List<FeedPost> posts;
-  final VoidCallback onDismiss;
-  const _WhatYouMissedCard({required this.posts, required this.onDismiss});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = C(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: c.border),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('What you missed', style: TextStyle(color: c.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700)),
-              const Spacer(),
-              GestureDetector(
-                onTap: onDismiss,
-                child: Icon(Icons.close_rounded, color: c.textMuted, size: 18),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 120,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: posts.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (_, i) {
-                final post = posts[i];
-                final cat = findCategory(post.categoryId);
-                final author = findUser(post.authorId);
-                return Container(
-                  width: 180,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: c.surfaceElevated,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border(left: BorderSide(color: cat?.color ?? AppColors.primary, width: 3)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          if (cat != null) Icon(cat.icon, color: cat.color, size: 13),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              author?.name ?? post.authorId,
-                              style: TextStyle(color: c.textPrimary, fontSize: 11.5, fontWeight: FontWeight.w700),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Expanded(
-                        child: Text(
-                          post.body,
-                          style: TextStyle(color: c.textSecondary, fontSize: 11.5, height: 1.4),
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+        itemBuilder: (ctx, i) => _PostCard(post: posts[i], onUpdate: onUpdate),
       ),
     );
   }
