@@ -153,31 +153,37 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
 
-                    // Real UAPP logo from CRM app (orange cap + white 3D U)
+                    // Logo + student image header area
                     SizedBox(
                       width: w,
-                      height: h * 0.30,
+                      height: h * 0.32,
                       child: Stack(
-                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
                         children: [
-                          // Student image on the right (decorative)
+                          // Student image — right side, extends from top, behind logo
                           Positioned(
-                            right: -10,
+                            right: 0,
+                            top: 0,
                             bottom: 0,
                             child: Opacity(
-                              opacity: 0.55,
+                              opacity: 0.65,
                               child: Image.asset(
                                 'assets/images/login_image_men.png',
-                                height: h * 0.28,
-                                fit: BoxFit.contain,
+                                width: w * 0.48,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
                               ),
                             ),
                           ),
-                          // Real logo centered
-                          Image.asset(
-                            'assets/images/logo_color.png',
-                            width: w * 0.42,
-                            fit: BoxFit.contain,
+                          // Real UAPP logo (orange cap + white U) — left-centre
+                          Positioned(
+                            left: w * 0.08,
+                            bottom: 10,
+                            child: Image.asset(
+                              'assets/images/logo_color.png',
+                              width: w * 0.42,
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ],
                       ),

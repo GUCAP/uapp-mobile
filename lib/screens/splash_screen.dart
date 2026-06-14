@@ -18,10 +18,10 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    _ctrl  = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
     _fade  = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
-    _scale = Tween(begin: 0.88, end: 1.0)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
+    _scale = Tween(begin: 0.90, end: 1.0)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _ctrl.forward();
 
     Future.delayed(const Duration(milliseconds: 2800), () {
@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen>
       body: Stack(
         alignment: Alignment.center,
         children: [
-          // Dark teal gradient background
+          // ── Background gradient (dark teal) ──────────────────
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -62,66 +62,69 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // Decorative background snowflake rings
-          Opacity(
-            opacity: 0.12,
-            child: CustomPaint(
-              size: Size(size.width, size.height),
-              painter: _RingsPainter(),
+          // ── Background shape overlay (barely visible) ─────────
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.13,
+              child: CustomPaint(painter: _ShapeOverlayPainter()),
             ),
           ),
 
-          // Vertical beam (real asset from CRM app)
-          FadeTransition(
-            opacity: _fade,
-            child: Image.asset(
-              'assets/images/beam.png',
-              width: size.width * 0.38,
-              height: size.height * 0.65,
-              fit: BoxFit.fill,
+          // ── Beam — from top, full height ──────────────────────
+          Positioned(
+            top: 0,
+            child: FadeTransition(
+              opacity: _fade,
+              child: Image.asset(
+                'assets/images/beam.png',
+                width: size.width * 0.36,
+                height: size.height * 0.58,
+                fit: BoxFit.fill,
+              ),
             ),
           ),
 
-          // Main content
+          // ── Main content ───────────────────────────────────────
           FadeTransition(
             opacity: _fade,
             child: ScaleTransition(
               scale: _scale,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(height: size.height * 0.06),
+                  // Offset up so logo sits over beam base
+                  SizedBox(height: size.height * 0.04),
 
-                  // Real app splash icon from CRM APK
+                  // Real UAPP app icon (sp_logo) — centred
                   Image.asset(
                     'assets/images/sp_logo.png',
-                    width: size.width * 0.46,
-                    height: size.width * 0.46,
+                    width: size.width * 0.42,
+                    height: size.width * 0.42,
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 28),
 
                   // UAPP wordmark
                   const Text(
                     'UAPP',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 36,
+                      fontSize: 32,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 6,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
 
-                  // Real tagline from CRM app
+                  // Tagline in brand teal
                   const Text(
                     'Global University College\nApplications Portal',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Color(0xFF019088),
-                      fontSize: 14,
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w500,
-                      height: 1.6,
+                      height: 1.65,
                       letterSpacing: 0.2,
                     ),
                   ),
@@ -130,7 +133,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // Bottom domain
+          // ── Bottom domain ──────────────────────────────────────
           Positioned(
             bottom: size.height * 0.07,
             child: FadeTransition(
@@ -138,9 +141,10 @@ class _SplashScreenState extends State<SplashScreen>
               child: Text(
                 'uapp.uk',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.20),
+                  fontSize: 11,
                   letterSpacing: 2.5,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
@@ -151,27 +155,29 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-// Decorative concentric rings (from spalshScreen_shape styling)
-class _RingsPainter extends CustomPainter {
+// Subtle background shape — approximates the spalshScreen_shape.svg star/snowflake
+class _ShapeOverlayPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size s) {
     final cx = s.width / 2;
-    final cy = s.height * 0.44;
-    final paint = Paint()
-      ..color = const Color(0xFF045D5E)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+    final cy = s.height * 0.40;
 
-    for (final r in [80.0, 160.0, 240.0, 320.0]) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    // Concentric rings (matches the SVG's circular motion)
+    for (final r in [s.width * 0.18, s.width * 0.36, s.width * 0.54, s.width * 0.72]) {
       canvas.drawCircle(Offset(cx, cy), r, paint);
     }
 
-    // Radial lines
+    // 12 radial spokes
     for (int i = 0; i < 12; i++) {
       final angle = (i * math.pi * 2) / 12;
       canvas.drawLine(
-        Offset(cx + 80 * math.cos(angle), cy + 80 * math.sin(angle)),
-        Offset(cx + 320 * math.cos(angle), cy + 320 * math.sin(angle)),
+        Offset(cx + s.width * 0.18 * math.cos(angle), cy + s.width * 0.18 * math.sin(angle)),
+        Offset(cx + s.width * 0.72 * math.cos(angle), cy + s.width * 0.72 * math.sin(angle)),
         paint,
       );
     }
