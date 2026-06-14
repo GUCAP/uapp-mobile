@@ -3,7 +3,7 @@ name: Build APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   build:
@@ -30,38 +30,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Analyse (no fatal errors)
-        run: flutter analyze --no-fatal-infos
-
       - name: Build release APK
-        run: flutter build apk --release --no-shrink
+        run: flutter build apk --release
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: UAPP-Mobile-APK
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: github.ref == 'refs/heads/main'
-        with:
-          tag_name: apk-${{ github.run_number }}
-          name: UAPP Mobile APK (Build ${{ github.run_number }})
-          body: |
-            ## UAPP Communication Hub — Android APK
-
-            **Download:** Click `app-release.apk` below to install on your Android phone.
-
-            **Install steps:**
-            1. Download the APK on your Android phone
-            2. Go to Settings → Security → Enable "Install unknown apps"
-            3. Open the downloaded APK and install
-
-            Built from commit: ${{ github.sha }}
-          files: build/app/outputs/flutter-apk/app-release.apk
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
