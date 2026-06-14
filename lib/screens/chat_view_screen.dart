@@ -21,9 +21,12 @@ class ChatViewScreen extends StatefulWidget {
 class _ChatViewScreenState extends State<ChatViewScreen> {
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
+  final _searchController = TextEditingController();
   late List<ChatMessage> _messages;
   bool _showScheduleCard = false;
   String? _replyingToId;
+  bool _searchMode = false;
+  String _searchQuery = '';
 
   // Per-message reactions: { msgId: { emoji: count } }
   final Map<String, Map<String, int>> _reactions = {};
@@ -49,6 +52,11 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
     return _otherUser?.online == true ? 'Active now' : _otherUser?.role ?? '';
   }
 
+  List<ChatMessage> get _filteredMessages {
+    if (_searchQuery.isEmpty) return _messages;
+    return _messages.where((m) => m.text.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +68,7 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
   void dispose() {
     _inputController.dispose();
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -123,17 +132,14 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
     setState(() {
       final prev = _myReaction[msgId];
       if (prev == emoji) {
-        // Un-react
         _myReaction[msgId] = null;
         _reactions[msgId]?[emoji] = (_reactions[msgId]?[emoji] ?? 1) - 1;
         if ((_reactions[msgId]?[emoji] ?? 0) <= 0) _reactions[msgId]?.remove(emoji);
       } else {
-        // Remove previous
         if (prev != null) {
           _reactions[msgId]?[prev] = (_reactions[msgId]?[prev] ?? 1) - 1;
           if ((_reactions[msgId]?[prev] ?? 0) <= 0) _reactions[msgId]?.remove(prev);
         }
-        // Add new
         _myReaction[msgId] = emoji;
         _reactions.putIfAbsent(msgId, () => {})[emoji] = (_reactions[msgId]?[emoji] ?? 0) + 1;
       }
@@ -141,15 +147,15 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
   }
 
   void _showMessageMenu(ChatMessage msg, bool isOwn) {
+    final c = C(context);
     final reactionEmojis = ['👍', '💡', '🎉', '❤️', '😂'];
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: c.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Quick reactions row
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
             child: Row(
@@ -159,7 +165,7 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
                 child: Container(
                   width: 48, height: 48,
                   decoration: BoxDecoration(
-                    color: _myReaction[msg.id] == e ? AppColors.primaryFaint : AppColors.bg,
+                    color: _myReaction[msg.id] == e ? AppColors.primaryFaint : c.bg,
                     borderRadius: BorderRadius.circular(24),
                   ),
                   alignment: Alignment.center,
@@ -168,7 +174,7 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
               )).toList(),
             ),
           ),
-          const Divider(color: AppColors.divider),
+          Divider(color: c.divider),
           _MenuAction(icon: Icons.reply_rounded, label: 'Reply', onTap: () {
             Navigator.pop(context);
             setState(() => _replyingToId = msg.id);
@@ -196,29 +202,143 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      appBar: _buildAppBar(),
-      body: Column(
+  void _showAttachMenu() {
+    final c = C(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: c.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Share', style: TextStyle(color: c.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _AttachTile(
+                  icon: Icons.photo_library_rounded,
+                  label: 'Photo',
+                  color: AppColors.primary,
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _messages.add(ChatMessage(
+                        id: 'msg-${DateTime.now().millisecondsSinceEpoch}',
+                        senderId: kCurrentUser.id,
+                        text: '📷 Shared a photo',
+                        timestamp: DateTime.now(),
+                      ));
+                    });
+                  },
+                ),
+                _AttachTile(
+                  icon: Icons.insert_drive_file_rounded,
+                  label: 'File',
+                  color: AppColors.orange,
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _messages.add(ChatMessage(
+                        id: 'msg-${DateTime.now().millisecondsSinceEpoch}',
+                        senderId: kCurrentUser.id,
+                        text: '📄 Shared a file',
+                        timestamp: DateTime.now(),
+                      ));
+                    });
+                  },
+                ),
+                _AttachTile(
+                  icon: Icons.school_rounded,
+                  label: 'App Link',
+                  color: const Color(0xFF7C3AED),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _messages.add(ChatMessage(
+                        id: 'msg-${DateTime.now().millisecondsSinceEpoch}',
+                        senderId: kCurrentUser.id,
+                        text: '🏫 Shared an application link',
+                        timestamp: DateTime.now(),
+                      ));
+                    });
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTemplates() {
+    final c = C(context);
+    const templates = [
+      'Hi, I wanted to follow up on the application status.',
+      'Could we schedule a quick call to discuss this?',
+      'The documents have been submitted and are under review.',
+      'Congratulations! The offer letter has been issued.',
+      'Please provide the missing documents at your earliest convenience.',
+      'Your application has been approved. Welcome aboard! 🎉',
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: c.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(child: _buildMessages()),
-          if (_replyingToId != null) _buildReplyBanner(),
-          if (_showScheduleCard) _buildScheduleCardArea(),
-          _buildInput(),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('Message Templates', style: TextStyle(color: c.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          ),
+          Divider(color: c.divider),
+          ...templates.map((t) => ListTile(
+            leading: const Icon(Icons.library_books_outlined, color: AppColors.primaryLight, size: 18),
+            title: Text(t, style: TextStyle(color: c.textPrimary, fontSize: 13.5)),
+            onTap: () {
+              Navigator.pop(context);
+              _inputController.text = t;
+              _inputController.selection = TextSelection.fromPosition(
+                TextPosition(offset: t.length),
+              );
+            },
+          )),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  @override
+  Widget build(BuildContext context) {
+    final c = C(context);
+    return Scaffold(
+      backgroundColor: c.bg,
+      appBar: _buildAppBar(c),
+      body: Column(
+        children: [
+          if (_searchMode) _buildSearchBar(c),
+          Expanded(child: _buildMessages(c)),
+          if (_replyingToId != null) _buildReplyBanner(c),
+          if (_showScheduleCard) _buildScheduleCardArea(c),
+          _buildInput(c),
+        ],
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(AC c) {
     final other = _otherUser;
     return AppBar(
-      backgroundColor: AppColors.surface,
+      backgroundColor: c.surface,
       leadingWidth: 44,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: AppColors.textSecondary),
+        icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: c.textSecondary),
         onPressed: () => Navigator.pop(context),
       ),
       title: Row(
@@ -231,10 +351,10 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                Text(_title, style: TextStyle(color: c.textPrimary, fontSize: 15, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
                 Text(
                   _subtitle,
-                  style: TextStyle(color: other?.online == true ? AppColors.online : AppColors.textMuted, fontSize: 11.5),
+                  style: TextStyle(color: other?.online == true ? AppColors.online : c.textMuted, fontSize: 11.5),
                 ),
               ],
             ),
@@ -243,26 +363,75 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
       ),
       actions: [
         IconButton(icon: const Icon(Icons.video_call_rounded, color: AppColors.primaryLight, size: 26), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.call_rounded, color: AppColors.textSecondary, size: 22), onPressed: () {}),
+        IconButton(icon: const Icon(Icons.call_rounded, size: 22), onPressed: () {}),
         IconButton(
-          icon: const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary, size: 22),
-          onPressed: () => _showThreadOptions(),
+          icon: Icon(_searchMode ? Icons.search_off_rounded : Icons.search_rounded, size: 22),
+          onPressed: () => setState(() {
+            _searchMode = !_searchMode;
+            _searchQuery = '';
+            _searchController.clear();
+          }),
+        ),
+        IconButton(
+          icon: Icon(Icons.more_vert_rounded, size: 22),
+          onPressed: () => _showThreadOptions(c),
         ),
       ],
     );
   }
 
-  Widget _buildMessages() {
+  Widget _buildSearchBar(AC c) {
+    final matched = _filteredMessages.length;
+    return Container(
+      color: c.surface,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              onChanged: (v) => setState(() => _searchQuery = v),
+              style: TextStyle(color: c.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Search messages…',
+                hintStyle: TextStyle(color: c.textMuted),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (_searchQuery.isNotEmpty)
+            Text(
+              '$matched match${matched != 1 ? 'es' : ''}',
+              style: TextStyle(color: c.textMuted, fontSize: 12),
+            ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: Icon(Icons.close_rounded, color: c.textMuted, size: 18),
+            onPressed: () => setState(() {
+              _searchMode = false;
+              _searchQuery = '';
+              _searchController.clear();
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessages(AC c) {
+    final msgs = _searchMode && _searchQuery.isNotEmpty ? _filteredMessages : _messages;
     return GestureDetector(
       onTap: () { FocusScope.of(context).unfocus(); setState(() => _replyingToId = null); },
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-        itemCount: _messages.length,
+        itemCount: msgs.length,
         itemBuilder: (ctx, i) {
-          final msg = _messages[i];
+          final msg = msgs[i];
           final isOwn = msg.senderId == kCurrentUser.id;
-          final showDate = i == 0 || !_isSameDay(_messages[i - 1].timestamp, msg.timestamp);
+          final showDate = i == 0 || !_isSameDay(msgs[i - 1].timestamp, msg.timestamp);
           final msgReactions = _reactions[msg.id];
 
           return Column(
@@ -288,6 +457,15 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
                       )
                     else
                       MessageBubble(message: msg, isOwn: isOwn),
+                    // Delivery ticks for own messages
+                    if (isOwn && msg.type == MessageType.text)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 4, bottom: 4),
+                          child: Icon(Icons.done_all_rounded, size: 12, color: AppColors.primaryLight),
+                        ),
+                      ),
                     // Show reactions on message
                     if (msgReactions != null && msgReactions.isNotEmpty)
                       Align(
@@ -304,11 +482,11 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
     );
   }
 
-  Widget _buildReplyBanner() {
+  Widget _buildReplyBanner(AC c) {
     final replyMsg = _messages.firstWhere((m) => m.id == _replyingToId, orElse: () => _messages.last);
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-      color: AppColors.surfaceElevated,
+      color: c.surfaceElevated,
       child: Row(
         children: [
           Container(width: 3, height: 36, color: AppColors.primary, margin: const EdgeInsets.only(right: 10)),
@@ -317,18 +495,18 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Replying to', style: TextStyle(color: AppColors.primaryLight, fontSize: 11.5, fontWeight: FontWeight.w600)),
-                Text(replyMsg.text, style: const TextStyle(color: AppColors.textMuted, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                Text(replyMsg.text, style: TextStyle(color: c.textMuted, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
-          IconButton(icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 18), onPressed: () => setState(() => _replyingToId = null)),
+          IconButton(icon: Icon(Icons.close_rounded, color: c.textMuted, size: 18), onPressed: () => setState(() => _replyingToId = null)),
         ],
       ),
     );
   }
 
-  Widget _buildScheduleCardArea() => Container(
-    color: AppColors.bg,
+  Widget _buildScheduleCardArea(AC c) => Container(
+    color: c.bg,
     padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
     child: ScheduleCallCard(
       onSchedule: _openScheduleCall,
@@ -336,17 +514,20 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
     ),
   );
 
-  Widget _buildInput() {
+  Widget _buildInput(AC c) {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
-      color: AppColors.surface,
+      color: c.surface,
       child: Row(
         children: [
-          IconButton(icon: const Icon(Icons.add_circle_outline_rounded, color: AppColors.textMuted, size: 24), onPressed: () {}),
+          IconButton(
+            icon: Icon(Icons.add_circle_outline_rounded, color: c.textMuted, size: 24),
+            onPressed: _showAttachMenu,
+          ),
           Expanded(
             child: TextField(
               controller: _inputController,
-              style: const TextStyle(color: Colors.white, fontSize: 14.5),
+              style: TextStyle(color: c.textPrimary, fontSize: 14.5),
               maxLines: null,
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(
@@ -358,10 +539,13 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
             ),
           ),
           IconButton(
+            icon: Icon(Icons.library_books_outlined, color: c.textMuted, size: 22),
+            onPressed: _showTemplates,
+          ),
+          IconButton(
             icon: const Icon(Icons.calendar_month_rounded, color: AppColors.primaryLight, size: 24),
             onPressed: () => setState(() => _showScheduleCard = !_showScheduleCard),
           ),
-          IconButton(icon: const Icon(Icons.emoji_emotions_outlined, color: AppColors.textMuted, size: 24), onPressed: () {}),
           GestureDetector(
             onTap: _sendMessage,
             child: Container(
@@ -376,20 +560,23 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
     );
   }
 
-  void _showThreadOptions() {
+  void _showThreadOptions(AC c) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: c.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(_title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            child: Text(_title, style: TextStyle(color: c.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
           ),
-          const Divider(color: AppColors.divider),
-          _MenuAction(icon: Icons.search_rounded, label: 'Search in conversation', onTap: () => Navigator.pop(context)),
+          Divider(color: c.divider),
+          _MenuAction(icon: Icons.search_rounded, label: 'Search in conversation', onTap: () {
+            Navigator.pop(context);
+            setState(() => _searchMode = true);
+          }),
           _MenuAction(icon: Icons.push_pin_rounded, label: 'Pinned messages', onTap: () => Navigator.pop(context)),
           if (widget.thread.isGroup)
             _MenuAction(icon: Icons.group_rounded, label: 'View members', onTap: () => Navigator.pop(context)),
@@ -402,6 +589,38 @@ class _ChatViewScreenState extends State<ChatViewScreen> {
   }
 }
 
+class _AttachTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _AttachTile({required this.icon, required this.label, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = C(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: 100,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64, height: 64,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
+              alignment: Alignment.center,
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(height: 8),
+            Text(label, style: TextStyle(color: c.textPrimary, fontSize: 13, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MessageReactions extends StatelessWidget {
   final Map<String, int> reactions;
   final void Function(String) onTap;
@@ -409,6 +628,7 @@ class _MessageReactions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 8, top: 2),
       child: Wrap(
@@ -418,16 +638,16 @@ class _MessageReactions extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-              color: AppColors.surfaceElevated,
+              color: c.surfaceElevated,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: c.border),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(e.key, style: const TextStyle(fontSize: 13)),
                 const SizedBox(width: 4),
-                Text('${e.value}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                Text('${e.value}', style: TextStyle(color: c.textSecondary, fontSize: 11.5, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
@@ -443,6 +663,7 @@ class _DateDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     final now = DateTime.now();
     final label = DateUtils.isSameDay(date, now) ? 'Today'
         : DateUtils.isSameDay(date, now.subtract(const Duration(days: 1))) ? 'Yesterday'
@@ -450,12 +671,12 @@ class _DateDivider extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(children: [
-        const Expanded(child: Divider(color: AppColors.border)),
+        Expanded(child: Divider(color: c.border)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5, fontWeight: FontWeight.w500)),
+          child: Text(label, style: TextStyle(color: c.textMuted, fontSize: 11.5, fontWeight: FontWeight.w500)),
         ),
-        const Expanded(child: Divider(color: AppColors.border)),
+        Expanded(child: Divider(color: c.border)),
       ]),
     );
   }
@@ -469,10 +690,13 @@ class _MenuAction extends StatelessWidget {
   const _MenuAction({required this.icon, required this.label, required this.onTap, this.color = AppColors.textSecondary});
 
   @override
-  Widget build(BuildContext context) => ListTile(
-    leading: Icon(icon, color: color, size: 20),
-    title: Text(label, style: TextStyle(color: color == AppColors.textSecondary ? Colors.white : color, fontSize: 14.5)),
-    onTap: onTap,
-    dense: true,
-  );
+  Widget build(BuildContext context) {
+    final c = C(context);
+    return ListTile(
+      leading: Icon(icon, color: color, size: 20),
+      title: Text(label, style: TextStyle(color: color == AppColors.textSecondary ? c.textPrimary : color, fontSize: 14.5)),
+      onTap: onTap,
+      dense: true,
+    );
+  }
 }

@@ -6,6 +6,7 @@ import '../models/meeting.dart';
 import '../widgets/top_bar_actions.dart';
 import '../widgets/user_avatar.dart';
 import 'schedule_call_screen.dart';
+import 'group_meeting_screen.dart';
 
 class ScheduledCallsScreen extends StatefulWidget {
   const ScheduledCallsScreen({super.key});
@@ -17,6 +18,24 @@ class ScheduledCallsScreen extends StatefulWidget {
 class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+
+  // Mock pending invites
+  List<Meeting> _pendingInvites = [
+    Meeting(
+      id: 'invite-1',
+      withUserId: 'u-andreea',
+      scheduledAt: DateTime.now().add(const Duration(hours: 3)),
+      type: MeetingType.consultation,
+      status: MeetingStatus.upcoming,
+    ),
+    Meeting(
+      id: 'invite-2',
+      withUserId: 'u-raj',
+      scheduledAt: DateTime.now().add(const Duration(days: 2)),
+      type: MeetingType.video,
+      status: MeetingStatus.upcoming,
+    ),
+  ];
 
   @override
   void initState() {
@@ -39,29 +58,33 @@ class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: c.bg,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
-            _buildTabs(),
+            _buildHeader(c),
+            _buildTabs(c),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
                   _MeetingList(
                     meetings: _meetings(MeetingStatus.upcoming),
-                    emptyLabel: 'No upcoming calls',
+                    status: MeetingStatus.upcoming,
                     onCancel: _cancelMeeting,
+                    pendingInvites: _pendingInvites,
+                    onAccept: _acceptInvite,
+                    onDecline: _declineInvite,
                   ),
                   _MeetingList(
                     meetings: _meetings(MeetingStatus.passed),
-                    emptyLabel: 'No past calls',
+                    status: MeetingStatus.passed,
                   ),
                   _MeetingList(
                     meetings: _meetings(MeetingStatus.canceled),
-                    emptyLabel: 'No canceled calls',
+                    status: MeetingStatus.canceled,
                   ),
                 ],
               ),
@@ -80,7 +103,6 @@ class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
   }
 
   void _openScheduleNew() {
-    // Pick the first online user available (demo)
     final target = kUsers.firstWhere(
       (u) => u.id != kCurrentUser.id && u.online,
       orElse: () => kUsers[1],
@@ -103,20 +125,57 @@ class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
     });
   }
 
-  Widget _buildHeader() {
+  void _acceptInvite(Meeting invite) {
+    setState(() {
+      _pendingInvites.removeWhere((m) => m.id == invite.id);
+      kMeetings.add(invite);
+    });
+  }
+
+  void _declineInvite(Meeting invite) {
+    setState(() => _pendingInvites.removeWhere((m) => m.id == invite.id));
+  }
+
+  Widget _buildHeader(AC c) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
       child: Row(
         children: [
-          const Text(
+          Text(
             'Schedule a Call',
-            style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700),
+            style: TextStyle(color: c.textPrimary, fontSize: 26, fontWeight: FontWeight.w700),
           ),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.filter_list_rounded, color: AppColors.textSecondary, size: 22),
+            icon: Icon(Icons.filter_list_rounded, color: c.textSecondary, size: 22),
             onPressed: () {},
             padding: EdgeInsets.zero,
+          ),
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, color: c.textSecondary, size: 22),
+            color: c.surface,
+            onSelected: (value) {
+              if (value == 'group_meeting') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => GroupMeetingScreen(onCreated: () => setState(() {})),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'group_meeting',
+                child: Row(
+                  children: [
+                    const Icon(Icons.group_add_rounded, color: AppColors.primaryLight, size: 18),
+                    const SizedBox(width: 10),
+                    Text('New Group Meeting', style: TextStyle(color: c.textPrimary)),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 6),
           const TopBarActions(),
@@ -125,51 +184,160 @@ class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
     );
   }
 
-  Widget _buildTabs() {
+  Widget _buildTabs(AC c) {
     return TabBar(
       controller: _tabController,
       tabs: const [Tab(text: 'Upcoming'), Tab(text: 'Past'), Tab(text: 'Canceled')],
       labelColor: AppColors.primaryLight,
-      unselectedLabelColor: AppColors.textMuted,
+      unselectedLabelColor: c.textMuted,
       labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
       unselectedLabelStyle: const TextStyle(fontSize: 13),
       indicatorColor: AppColors.primary,
       indicatorWeight: 2,
-      dividerColor: AppColors.divider,
+      dividerColor: c.divider,
     );
   }
 }
 
 class _MeetingList extends StatelessWidget {
   final List<Meeting> meetings;
-  final String emptyLabel;
+  final MeetingStatus status;
   final void Function(Meeting)? onCancel;
+  final List<Meeting> pendingInvites;
+  final void Function(Meeting)? onAccept;
+  final void Function(Meeting)? onDecline;
 
   const _MeetingList({
     required this.meetings,
-    required this.emptyLabel,
+    required this.status,
     this.onCancel,
+    this.pendingInvites = const [],
+    this.onAccept,
+    this.onDecline,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (meetings.isEmpty) {
+    final c = C(context);
+    final hasPending = pendingInvites.isNotEmpty && status == MeetingStatus.upcoming;
+
+    if (meetings.isEmpty && !hasPending) {
+      final (icon, title, subtitle) = switch (status) {
+        MeetingStatus.passed   => (Icons.history_rounded, 'No past calls', 'Completed calls will appear here'),
+        MeetingStatus.canceled => (Icons.cancel_outlined, 'No canceled calls', 'Canceled meetings will appear here'),
+        _                      => (Icons.calendar_today_rounded, 'No upcoming calls', 'Schedule a call to get started'),
+      };
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.calendar_today_rounded, color: AppColors.textMuted, size: 48),
-            const SizedBox(height: 12),
-            Text(emptyLabel, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+            Container(
+              width: 80, height: 80,
+              decoration: BoxDecoration(color: c.surfaceElevated, borderRadius: BorderRadius.circular(20)),
+              alignment: Alignment.center,
+              child: Icon(icon, color: c.textMuted, size: 40),
+            ),
+            const SizedBox(height: 16),
+            Text(title, style: TextStyle(color: c.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(subtitle, style: TextStyle(color: c.textMuted, fontSize: 13)),
           ],
         ),
       );
     }
+
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-      itemCount: meetings.length,
+      itemCount: meetings.length + (hasPending ? 1 : 0),
       separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (ctx, i) => _MeetingCard(meeting: meetings[i], onCancel: onCancel),
+      itemBuilder: (ctx, i) {
+        if (hasPending && i == 0) {
+          return _PendingInvitesBanner(
+            invites: pendingInvites,
+            onAccept: onAccept ?? (_) {},
+            onDecline: onDecline ?? (_) {},
+          );
+        }
+        final idx = hasPending ? i - 1 : i;
+        return _MeetingCard(meeting: meetings[idx], onCancel: onCancel);
+      },
+    );
+  }
+}
+
+class _PendingInvitesBanner extends StatelessWidget {
+  final List<Meeting> invites;
+  final void Function(Meeting) onAccept;
+  final void Function(Meeting) onDecline;
+  const _PendingInvitesBanner({required this.invites, required this.onAccept, required this.onDecline});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = C(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.primaryFaint,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primaryBorder),
+      ),
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.mail_outline_rounded, color: AppColors.primaryLight, size: 16),
+              const SizedBox(width: 6),
+              Text('Pending Invites (${invites.length})', style: const TextStyle(color: AppColors.primaryLight, fontSize: 13.5, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...invites.map((invite) {
+            final user = findUser(invite.withUserId);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                children: [
+                  if (user != null) UserAvatar(userId: user.id, size: 36),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(user?.name ?? invite.withUserId, style: TextStyle(color: c.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(DateFormat("EEE, d MMM 'at' h:mm a").format(invite.scheduledAt), style: TextStyle(color: c.textMuted, fontSize: 11.5)),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => onAccept(invite),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Accept', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(width: 6),
+                  OutlinedButton(
+                    onPressed: () => onDecline(invite),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.danger,
+                      side: BorderSide(color: AppColors.danger.withValues(alpha: 0.5)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text('Decline', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }
@@ -206,6 +374,7 @@ class _MeetingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     final user = findUser(meeting.withUserId);
     final now = DateTime.now();
     final isNow = meeting.status == MeetingStatus.upcoming &&
@@ -213,10 +382,10 @@ class _MeetingCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isNow ? AppColors.orange.withValues(alpha: 0.5) : AppColors.border,
+          color: isNow ? AppColors.orange.withValues(alpha: 0.5) : c.border,
         ),
       ),
       child: Padding(
@@ -234,12 +403,12 @@ class _MeetingCard extends StatelessWidget {
                     children: [
                       Text(
                         user?.name ?? meeting.withUserId,
-                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: c.textPrimary, fontSize: 15, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         user?.role ?? '',
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                        style: TextStyle(color: c.textMuted, fontSize: 12),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -270,23 +439,23 @@ class _MeetingCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.bg,
+                color: c.bg,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today_rounded, color: AppColors.textMuted, size: 14),
+                  Icon(Icons.calendar_today_rounded, color: c.textMuted, size: 14),
                   const SizedBox(width: 8),
                   Text(
                     DateFormat("EEE, dd MMM yyyy").format(meeting.scheduledAt),
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+                    style: TextStyle(color: c.textSecondary, fontSize: 12.5),
                   ),
                   const SizedBox(width: 12),
-                  const Icon(Icons.access_time_rounded, color: AppColors.textMuted, size: 14),
+                  Icon(Icons.access_time_rounded, color: c.textMuted, size: 14),
                   const SizedBox(width: 6),
                   Text(
                     DateFormat("h:mm a").format(meeting.scheduledAt),
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+                    style: TextStyle(color: c.textSecondary, fontSize: 12.5),
                   ),
                 ],
               ),
@@ -319,9 +488,9 @@ class _MeetingCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: Row(
+                      child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(Icons.videocam_rounded, size: 16),
                           SizedBox(width: 6),
                           Text('Call Now', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),

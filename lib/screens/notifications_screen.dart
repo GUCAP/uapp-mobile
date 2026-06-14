@@ -74,8 +74,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   Widget build(BuildContext context) {
     final unreadCount = kNotifications.where((n) => !n.isRead).length;
 
+    final c = C(context);
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: c.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -99,22 +100,23 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   Widget _buildHeader(int unread) {
+    final c = C(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 12),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      decoration: BoxDecoration(
+        color: c.surface,
+        border: Border(bottom: BorderSide(color: c.divider)),
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textSecondary, size: 18),
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: c.textSecondary, size: 18),
             onPressed: () => Navigator.pop(context),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
           const SizedBox(width: 12),
-          const Text('Notifications', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+          Text('Notifications', style: TextStyle(color: c.textPrimary, fontSize: 22, fontWeight: FontWeight.w800)),
           if (unread > 0) ...[
             const SizedBox(width: 8),
             Container(
@@ -135,19 +137,20 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   Widget _buildFilterTabs() {
+    final c = C(context);
     return Container(
-      color: AppColors.surface,
+      color: c.surface,
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
         tabAlignment: TabAlignment.start,
         labelColor: AppColors.primaryLight,
-        unselectedLabelColor: AppColors.textMuted,
+        unselectedLabelColor: c.textMuted,
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(fontSize: 13),
         indicatorColor: AppColors.primary,
         indicatorWeight: 2.5,
-        dividerColor: AppColors.divider,
+        dividerColor: c.divider,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         tabs: _filters.map((f) {
           final count = _filtered(f).where((n) => !n.isRead).length;
@@ -193,6 +196,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   Widget _buildEmpty(String filter) {
+    final c = C(context);
     final (icon, label) = switch (filter) {
       'Unread'    => (Icons.mark_email_read_rounded,   'All caught up!'),
       'Mentions'  => (Icons.alternate_email_rounded,   'No mentions yet'),
@@ -207,18 +211,18 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           Container(
             width: 80, height: 80,
             decoration: BoxDecoration(
-              color: AppColors.surfaceElevated,
+              color: c.surfaceElevated,
               borderRadius: BorderRadius.circular(24),
             ),
             alignment: Alignment.center,
-            child: Icon(icon, color: AppColors.textMuted, size: 40),
+            child: Icon(icon, color: c.textMuted, size: 40),
           ),
           const SizedBox(height: 16),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700)),
+          Text(label, style: TextStyle(color: c.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           Text(
             filter == 'Unread' ? 'You\'ve read everything.' : 'Nothing here yet.',
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+            style: TextStyle(color: c.textMuted, fontSize: 13),
           ),
         ],
       ),
@@ -232,13 +236,16 @@ class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.label});
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-    child: Text(
-      label,
-      style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.w700),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final c = C(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      child: Text(
+        label,
+        style: TextStyle(color: c.textSecondary, fontSize: 14, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
 }
 
 // ── Single notification tile ──────────────────────────────────
@@ -289,6 +296,7 @@ class _NotifTile extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           color: notif.isRead ? Colors.transparent : AppColors.primary.withValues(alpha: 0.06),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -300,28 +308,34 @@ class _NotifTile extends StatelessWidget {
                     // Main avatar
                     user != null
                         ? UserAvatar(userId: user.id, size: 54)
-                        : Container(
-                            width: 54, height: 54,
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceElevated,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Icon(Icons.campaign_rounded, color: AppColors.textMuted, size: 26),
-                          ),
+                        : Builder(builder: (ctx) {
+                            final c = C(ctx);
+                            return Container(
+                              width: 54, height: 54,
+                              decoration: BoxDecoration(
+                                color: c.surfaceElevated,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              alignment: Alignment.center,
+                              child: Icon(Icons.campaign_rounded, color: c.textMuted, size: 26),
+                            );
+                          }),
                     // Type icon badge (bottom-right)
                     Positioned(
                       right: -2, bottom: -2,
-                      child: Container(
-                        width: 22, height: 22,
-                        decoration: BoxDecoration(
-                          color: ov.bg,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.bg, width: 2),
-                        ),
-                        alignment: Alignment.center,
-                        child: Icon(ov.icon, color: Colors.white, size: 11),
-                      ),
+                      child: Builder(builder: (ctx) {
+                        final c = C(ctx);
+                        return Container(
+                          width: 22, height: 22,
+                          decoration: BoxDecoration(
+                            color: ov.bg,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: c.bg, width: 2),
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(ov.icon, color: Colors.white, size: 11),
+                        );
+                      }),
                     ),
                   ],
                 ),
@@ -338,14 +352,17 @@ class _NotifTile extends StatelessWidget {
                     // Time + action chips
                     Row(
                       children: [
-                        Text(
-                          _timeAgo(notif.createdAt),
-                          style: TextStyle(
-                            color: notif.isRead ? AppColors.textMuted : AppColors.primaryLight,
-                            fontSize: 12,
-                            fontWeight: notif.isRead ? FontWeight.normal : FontWeight.w600,
-                          ),
-                        ),
+                        Builder(builder: (ctx) {
+                          final c = C(ctx);
+                          return Text(
+                            _timeAgo(notif.createdAt),
+                            style: TextStyle(
+                              color: notif.isRead ? c.textMuted : AppColors.primaryLight,
+                              fontSize: 12,
+                              fontWeight: notif.isRead ? FontWeight.normal : FontWeight.w600,
+                            ),
+                          );
+                        }),
                         if (notif.type == 'meeting_invite' && !notif.isRead) ...[
                           const SizedBox(width: 10),
                           _ActionChip(label: 'Accept', color: AppColors.primary, onTap: onTap),
@@ -390,19 +407,20 @@ class _RichBody extends StatelessWidget {
     final senderName = user?.name ?? '';
     final body = notif.body;
 
+    final c = C(context);
     if (senderName.isNotEmpty && body.startsWith(senderName)) {
       final rest = body.substring(senderName.length);
       return RichText(
         text: TextSpan(
-          style: const TextStyle(fontSize: 13.5, height: 1.4, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 13.5, height: 1.4, color: c.textSecondary),
           children: [
-            TextSpan(text: senderName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            TextSpan(text: senderName, style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w700)),
             TextSpan(text: rest),
           ],
         ),
       );
     }
-    return Text(body, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13.5, height: 1.4));
+    return Text(body, style: TextStyle(color: c.textSecondary, fontSize: 13.5, height: 1.4));
   }
 }
 

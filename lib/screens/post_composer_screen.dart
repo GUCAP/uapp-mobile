@@ -52,6 +52,7 @@ class _PostComposerScreenState extends State<PostComposerScreen> {
   // Schedule feature
   bool _isScheduled = false;
   DateTime? _scheduledAt;
+  String _recurrence = 'none';
 
   bool get _canPost => _bodyCtrl.text.trim().isNotEmpty;
 
@@ -82,6 +83,7 @@ class _PostComposerScreenState extends State<PostComposerScreen> {
 
     String body = text;
     if (_feeling != null) body = '${_feeling!.emoji} $body — feeling ${_feeling!.label}';
+    if (_recurrence != 'none') body = '$body (Repeats $_recurrence)';
 
     widget.onPost(FeedPost(
       id: 'post-${DateTime.now().millisecondsSinceEpoch}',
@@ -139,49 +141,83 @@ class _PostComposerScreenState extends State<PostComposerScreen> {
         centerTitle: true,
         title: Text(t('create_post'), style: TextStyle(color: c.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(44),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Row(
-              children: [
-                // Post now / Schedule toggle
-                GestureDetector(
-                  onTap: () => setState(() { _isScheduled = false; _scheduledAt = null; }),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: !_isScheduled ? AppColors.primary : c.surfaceElevated,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(t('post_now'), style: TextStyle(color: !_isScheduled ? Colors.white : c.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600)),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () async {
-                    setState(() => _isScheduled = true);
-                    await _pickScheduleDateTime();
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: _isScheduled ? AppColors.orange : c.surfaceElevated,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.schedule_rounded, size: 14, color: Colors.white),
-                      const SizedBox(width: 5),
-                      Text(
-                        _scheduledAt != null ? DateFormat('d MMM, h:mm a').format(_scheduledAt!) : t('schedule_post'),
-                        style: TextStyle(color: _isScheduled ? Colors.white : c.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600),
+          preferredSize: Size.fromHeight(_isScheduled ? 92 : 44),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  children: [
+                    // Post now / Schedule toggle
+                    GestureDetector(
+                      onTap: () => setState(() { _isScheduled = false; _scheduledAt = null; _recurrence = 'none'; }),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: !_isScheduled ? AppColors.primary : c.surfaceElevated,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(t('post_now'), style: TextStyle(color: !_isScheduled ? Colors.white : c.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600)),
                       ),
-                    ]),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () async {
+                        setState(() => _isScheduled = true);
+                        await _pickScheduleDateTime();
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: _isScheduled ? AppColors.orange : c.surfaceElevated,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.schedule_rounded, size: 14, color: Colors.white),
+                          const SizedBox(width: 5),
+                          Text(
+                            _scheduledAt != null ? DateFormat('d MMM, h:mm a').format(_scheduledAt!) : t('schedule_post'),
+                            style: TextStyle(color: _isScheduled ? Colors.white : c.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Repeat section (only when scheduled)
+              if (_isScheduled)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      Text('Repeat', style: TextStyle(color: c.textSecondary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 10),
+                      ...['none', 'daily', 'weekly', 'monthly'].map((r) {
+                        final isSelected = _recurrence == r;
+                        final label = r == 'none' ? "Don't repeat" : r[0].toUpperCase() + r.substring(1);
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: GestureDetector(
+                            onTap: () => setState(() => _recurrence = r),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.primary : c.surfaceElevated,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(label, style: TextStyle(color: isSelected ? Colors.white : c.textMuted, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
         actions: [

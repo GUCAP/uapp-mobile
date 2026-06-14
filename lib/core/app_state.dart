@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 /// Global theme notifier — dark (true) or light (false)
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.dark);
 
+/// Global current user id notifier (account switcher)
+final ValueNotifier<String> currentUserIdNotifier = ValueNotifier('u-shamim');
+
 bool get isDarkMode => themeNotifier.value == ThemeMode.dark;
 
 void toggleTheme() {

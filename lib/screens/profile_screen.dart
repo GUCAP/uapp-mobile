@@ -3,6 +3,7 @@ import '../core/theme.dart';
 import '../core/app_state.dart';
 import '../core/translations.dart';
 import '../data/mock_data.dart';
+import '../models/user.dart';
 import '../widgets/user_avatar.dart';
 import 'notifications_screen.dart';
 import 'settings/settings_screen.dart';
@@ -61,6 +62,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showAccountSwitcher() {
+    final nonStudents = kUsers.where((u) => u.type != UserType.student).take(5).toList();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: C(context).surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setSheet) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('Switch Account', style: TextStyle(color: C(context).textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            ),
+            const Divider(),
+            ...nonStudents.map((u) {
+              final selected = currentUserIdNotifier.value == u.id;
+              return ListTile(
+                leading: Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(color: u.color, shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: Text(u.initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                ),
+                title: Text(u.name, style: TextStyle(color: C(context).textPrimary, fontSize: 14.5)),
+                subtitle: Text(u.role, style: TextStyle(color: C(context).textMuted, fontSize: 12)),
+                trailing: selected ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryLight) : null,
+                onTap: () {
+                  currentUserIdNotifier.value = u.id;
+                  setState(() {});
+                  Navigator.pop(context);
+                },
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = C(context);
@@ -79,6 +121,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Row(
                 children: [
+                  if (Navigator.canPop(context))
+                    IconButton(
+                      icon: Icon(Icons.arrow_back_ios_new_rounded, color: c.textSecondary, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  if (Navigator.canPop(context)) const SizedBox(width: 8),
                   Text(t('profile'), style: TextStyle(color: c.textPrimary, fontSize: 26, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   Stack(
@@ -102,7 +152,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              // Account switcher row
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: c.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: c.border),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 28, height: 28,
+                      decoration: BoxDecoration(color: user.color, shape: BoxShape.circle),
+                      alignment: Alignment.center,
+                      child: Text(user.initials, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(user.name, style: TextStyle(color: c.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
+                          Text(user.role, style: TextStyle(color: c.textMuted, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _showAccountSwitcher,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        foregroundColor: AppColors.primaryLight,
+                        minimumSize: Size.zero,
+                      ),
+                      child: const Text('Switch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),

@@ -3,6 +3,7 @@ import '../models/user.dart';
 import '../models/message.dart';
 import '../models/meeting.dart';
 import '../models/post.dart';
+import '../core/app_state.dart';
 
 // ── Users (mirrors the web app's USERS array) ─────────────────
 final List<AppUser> kUsers = [
@@ -87,7 +88,7 @@ AppUser? findUser(String id) {
 }
 
 // ── Current logged-in user ────────────────────────────────────
-final AppUser kCurrentUser = kUsers.first; // Shamim Rahman
+AppUser get kCurrentUser => findUser(currentUserIdNotifier.value) ?? kUsers.first;
 
 // ── Mock chat threads ─────────────────────────────────────────
 final List<ChatThread> kInitialThreads = [

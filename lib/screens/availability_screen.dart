@@ -49,8 +49,9 @@ class _AvailabilityScreenState extends State<AvailabilityScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: c.bg,
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -79,43 +80,61 @@ class _AvailabilityScreenState extends State<AvailabilityScreen>
     );
   }
 
-  Widget _buildHeader() => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
-    child: Row(
-      children: [
-        const Text('My Schedule', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700)),
-        const Spacer(),
-        IconButton(
-          icon: const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary, size: 24),
-          onPressed: () => setState(() => _weekStart = _weekStart.subtract(const Duration(days: 7))),
-          padding: EdgeInsets.zero,
-        ),
-        Text(
-          '${DateFormat('d MMM').format(_weekDays.first)}–${DateFormat('d MMM').format(_weekDays.last)}',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-        ),
-        IconButton(
-          icon: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 24),
-          onPressed: () => setState(() => _weekStart = _weekStart.add(const Duration(days: 7))),
-          padding: EdgeInsets.zero,
-        ),
-        const SizedBox(width: 6),
-        const TopBarActions(),
-      ],
-    ),
-  );
+  Widget _buildHeader() {
+    final c = C(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
+      child: Row(
+        children: [
+          Text('My Schedule', style: TextStyle(color: c.textPrimary, fontSize: 26, fontWeight: FontWeight.w700)),
+          const Spacer(),
+          IconButton(
+            icon: Icon(Icons.chevron_left_rounded, color: c.textSecondary, size: 24),
+            onPressed: () => setState(() => _weekStart = _weekStart.subtract(const Duration(days: 7))),
+            padding: EdgeInsets.zero,
+          ),
+          Text(
+            '${DateFormat('d MMM').format(_weekDays.first)}–${DateFormat('d MMM').format(_weekDays.last)}',
+            style: TextStyle(color: c.textSecondary, fontSize: 12),
+          ),
+          IconButton(
+            icon: Icon(Icons.chevron_right_rounded, color: c.textSecondary, size: 24),
+            onPressed: () => setState(() => _weekStart = _weekStart.add(const Duration(days: 7))),
+            padding: EdgeInsets.zero,
+          ),
+          // Today chip
+          GestureDetector(
+            onTap: () => setState(() => _weekStart = _mondayOf(DateTime.now())),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.primary),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text('Today', style: TextStyle(color: AppColors.primaryLight, fontSize: 11.5, fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(width: 6),
+          const TopBarActions(),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildTabs() => TabBar(
-    controller: _tabController,
-    tabs: const [Tab(text: 'Agenda'), Tab(text: 'Work Hours'), Tab(text: 'Away')],
-    labelColor: AppColors.primaryLight,
-    unselectedLabelColor: AppColors.textMuted,
-    labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-    unselectedLabelStyle: const TextStyle(fontSize: 13),
-    indicatorColor: AppColors.primary,
-    indicatorWeight: 2,
-    dividerColor: AppColors.divider,
-  );
+  Widget _buildTabs() {
+    final c = C(context);
+    return TabBar(
+      controller: _tabController,
+      tabs: const [Tab(text: 'Agenda'), Tab(text: 'Work Hours'), Tab(text: 'Away')],
+      labelColor: AppColors.primaryLight,
+      unselectedLabelColor: c.textMuted,
+      labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      unselectedLabelStyle: const TextStyle(fontSize: 13),
+      indicatorColor: AppColors.primary,
+      indicatorWeight: 2,
+      dividerColor: c.divider,
+    );
+  }
 }
 
 // ── Agenda view ───────────────────────────────────────────────
@@ -132,13 +151,14 @@ class _AgendaView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     final today = DateTime.now();
 
     return Column(
       children: [
         // Week strip
         Container(
-          color: AppColors.surface,
+          color: c.surface,
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: weekDays.map((day) {
@@ -146,7 +166,7 @@ class _AgendaView extends StatelessWidget {
               return Expanded(
                 child: Column(
                   children: [
-                    Text(DateFormat('EEE').format(day), style: TextStyle(color: isToday ? AppColors.primaryLight : AppColors.textMuted, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                    Text(DateFormat('EEE').format(day), style: TextStyle(color: isToday ? AppColors.primaryLight : c.textMuted, fontSize: 11.5, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 4),
                     Container(
                       width: 32, height: 32,
@@ -155,10 +175,9 @@ class _AgendaView extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       alignment: Alignment.center,
-                      child: Text('${day.day}', style: TextStyle(color: isToday ? Colors.white : AppColors.textSecondary, fontSize: 14, fontWeight: isToday ? FontWeight.w700 : FontWeight.normal)),
+                      child: Text('${day.day}', style: TextStyle(color: isToday ? Colors.white : c.textSecondary, fontSize: 14, fontWeight: isToday ? FontWeight.w700 : FontWeight.normal)),
                     ),
                     const SizedBox(height: 4),
-                    // Dot if has meetings
                     Container(
                       width: 5, height: 5,
                       decoration: BoxDecoration(
@@ -172,8 +191,7 @@ class _AgendaView extends StatelessWidget {
             }).toList(),
           ),
         ),
-        const Divider(height: 1, color: AppColors.border),
-        // Day list
+        Divider(height: 1, color: c.border),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -192,7 +210,7 @@ class _AgendaView extends StatelessWidget {
                         Text(
                           DateFormat('EEEE, d MMMM').format(day),
                           style: TextStyle(
-                            color: isToday ? AppColors.primaryLight : AppColors.textSecondary,
+                            color: isToday ? AppColors.primaryLight : c.textSecondary,
                             fontSize: 13, fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -210,12 +228,12 @@ class _AgendaView extends StatelessWidget {
                   if (dayMeetings.isEmpty)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: Text('No meetings', style: const TextStyle(color: AppColors.textHint, fontSize: 13)),
+                      child: Text('No meetings', style: TextStyle(color: c.textMuted, fontSize: 13)),
                     )
                   else
                     ...dayMeetings.map((m) => _AgendaMeetingTile(meeting: m)),
                   if (i < weekDays.length - 1)
-                    const Divider(color: AppColors.divider),
+                    Divider(color: c.divider),
                 ],
               );
             },
@@ -248,12 +266,13 @@ class _AgendaMeetingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     final user = findUser(meeting.withUserId);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _typeColor.withValues(alpha: 0.3)),
         boxShadow: [BoxShadow(color: _typeColor.withValues(alpha: 0.05), blurRadius: 8)],
@@ -271,8 +290,8 @@ class _AgendaMeetingTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user?.name ?? meeting.withUserId, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                Text(DateFormat('h:mm a').format(meeting.scheduledAt), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                Text(user?.name ?? meeting.withUserId, style: TextStyle(color: c.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                Text(DateFormat('h:mm a').format(meeting.scheduledAt), style: TextStyle(color: c.textMuted, fontSize: 12)),
               ],
             ),
           ),
@@ -337,26 +356,27 @@ class _WorkHourTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: block.active ? AppColors.border : AppColors.divider),
+        border: Border.all(color: block.active ? c.border : c.divider),
       ),
       child: Row(
         children: [
           SizedBox(
             width: 88,
-            child: Text(_days[block.dayKey] ?? block.dayKey, style: TextStyle(color: block.active ? Colors.white : AppColors.textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
+            child: Text(_days[block.dayKey] ?? block.dayKey, style: TextStyle(color: block.active ? c.textPrimary : c.textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
           ),
           if (block.active) ...[
             _TimeTag(block.from),
-            const Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('–', style: TextStyle(color: AppColors.textMuted))),
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Text('–', style: TextStyle(color: c.textMuted))),
             _TimeTag(block.to),
           ] else
-            const Text('Not available', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+            Text('Not available', style: TextStyle(color: c.textMuted, fontSize: 13)),
           const Spacer(),
           Switch.adaptive(
             value: block.active,

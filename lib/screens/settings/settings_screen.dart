@@ -8,6 +8,7 @@ import 'templates_screen.dart';
 import 'webhooks_screen.dart';
 import 'feed_preferences_screen.dart';
 import 'timezone_screen.dart';
+import 'promotions_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -59,6 +60,13 @@ class SettingsScreen extends StatelessWidget {
                           color: const Color(0xFF16A34A),
                           onTap: () => _push(context, const WebhooksScreen()),
                           trailingBadge: '${kWebhooks.where((w) => w.installed).length} active',
+                        ),
+                        _SettingsItem(
+                          icon: Icons.campaign_rounded,
+                          label: 'Promotions & Commissions',
+                          description: 'Manage university promotion campaigns and commission rates',
+                          color: AppColors.orange,
+                          onTap: () => _push(context, const PromotionsScreen()),
                         ),
                       ]),
                       const SizedBox(height: 20),

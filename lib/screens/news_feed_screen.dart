@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../data/mock_data.dart';
 import '../models/post.dart';
+import '../models/message.dart';
 import '../widgets/user_avatar.dart';
 import '../widgets/top_bar_actions.dart';
 import 'post_composer_screen.dart';
@@ -17,6 +18,7 @@ class NewsFeedScreen extends StatefulWidget {
 class _NewsFeedScreenState extends State<NewsFeedScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool _showMissed = true;
 
   List<FeedPost> _filtered(String scope) {
     switch (scope) {
@@ -53,22 +55,34 @@ class _NewsFeedScreenState extends State<NewsFeedScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: c.bg,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
-            _buildTabs(),
-            _buildComposerBar(),
+            _buildHeader(c),
+            _buildTabs(c),
+            _buildComposerBar(c),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _PostList(posts: _filtered('for_you'), onUpdate: () => setState(() {})),
+                  _PostList(
+                    posts: _filtered('for_you'),
+                    onUpdate: () => setState(() {}),
+                    showMissed: _showMissed,
+                    onDismissMissed: () => setState(() => _showMissed = false),
+                  ),
                   _PostList(posts: _filtered('team'), onUpdate: () => setState(() {})),
                   _PostList(posts: _filtered('company'), onUpdate: () => setState(() {})),
-                  _PostList(posts: _filtered('saved'), onUpdate: () => setState(() {}), emptyLabel: 'No saved posts yet'),
+                  _PostList(
+                    posts: _filtered('saved'),
+                    onUpdate: () => setState(() {}),
+                    emptyLabel: 'Nothing saved yet',
+                    emptySubtitle: 'Tap the 🔖 on any post',
+                    emptyIcon: Icons.bookmark_border_rounded,
+                  ),
                 ],
               ),
             ),
@@ -91,28 +105,28 @@ class _NewsFeedScreenState extends State<NewsFeedScreen>
     );
   }
 
-  Widget _buildHeader() => Padding(
+  Widget _buildHeader(AC c) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
     child: Row(
       children: [
-        const Text('News Feed', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700)),
+        Text('News Feed', style: TextStyle(color: c.textPrimary, fontSize: 26, fontWeight: FontWeight.w700)),
         const Spacer(),
-        IconButton(icon: const Icon(Icons.tune_rounded, color: AppColors.textSecondary, size: 22), onPressed: () {}),
+        IconButton(icon: Icon(Icons.tune_rounded, color: c.textSecondary, size: 22), onPressed: () {}),
         const SizedBox(width: 6),
         const TopBarActions(),
       ],
     ),
   );
 
-  Widget _buildComposerBar() => GestureDetector(
+  Widget _buildComposerBar(AC c) => GestureDetector(
     onTap: _showComposer,
     child: Container(
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: c.border),
       ),
       child: Row(
         children: [
@@ -123,25 +137,25 @@ class _NewsFeedScreenState extends State<NewsFeedScreen>
             child: Text(kCurrentUser.initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
           ),
           const SizedBox(width: 12),
-          const Expanded(
-            child: Text("What's on your mind?", style: TextStyle(color: AppColors.textMuted, fontSize: 14.5)),
+          Expanded(
+            child: Text("What's on your mind?", style: TextStyle(color: c.textMuted, fontSize: 14.5)),
           ),
-          const Icon(Icons.photo_library_outlined, color: AppColors.primaryLight, size: 22),
+          Icon(Icons.photo_library_outlined, color: AppColors.primaryLight, size: 22),
         ],
       ),
     ),
   );
 
-  Widget _buildTabs() => TabBar(
+  Widget _buildTabs(AC c) => TabBar(
     controller: _tabController,
     tabs: const [Tab(text: 'For You'), Tab(text: 'Team'), Tab(text: 'Company'), Tab(text: 'Saved')],
     labelColor: AppColors.primaryLight,
-    unselectedLabelColor: AppColors.textMuted,
+    unselectedLabelColor: c.textMuted,
     labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
     unselectedLabelStyle: const TextStyle(fontSize: 13),
     indicatorColor: AppColors.primary,
     indicatorWeight: 2,
-    dividerColor: AppColors.divider,
+    dividerColor: c.divider,
   );
 }
 
@@ -150,25 +164,152 @@ class _PostList extends StatelessWidget {
   final List<FeedPost> posts;
   final VoidCallback onUpdate;
   final String? emptyLabel;
+  final String? emptySubtitle;
+  final IconData? emptyIcon;
+  final bool showMissed;
+  final VoidCallback? onDismissMissed;
 
-  const _PostList({required this.posts, required this.onUpdate, this.emptyLabel});
+  const _PostList({
+    required this.posts,
+    required this.onUpdate,
+    this.emptyLabel,
+    this.emptySubtitle,
+    this.emptyIcon,
+    this.showMissed = false,
+    this.onDismissMissed,
+  });
+
+  List<FeedPost> get _missedPosts => posts.where((p) => p.priority == PostPriority.high || p.isPinned).toList();
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     if (posts.isEmpty) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.newspaper_rounded, color: AppColors.textMuted, size: 48),
-          const SizedBox(height: 12),
-          Text(emptyLabel ?? 'No posts yet', style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+          Container(
+            width: 80, height: 80,
+            decoration: BoxDecoration(
+              color: c.surfaceElevated,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            alignment: Alignment.center,
+            child: Icon(emptyIcon ?? Icons.newspaper_rounded, color: c.textMuted, size: 40),
+          ),
+          const SizedBox(height: 16),
+          Text(emptyLabel ?? 'No posts yet', style: TextStyle(color: c.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+          if (emptySubtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(emptySubtitle!, style: TextStyle(color: c.textMuted, fontSize: 13)),
+          ],
         ]),
       );
     }
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-      itemCount: posts.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => _PostCard(post: posts[i], onUpdate: onUpdate),
+
+    final missed = showMissed && _missedPosts.isNotEmpty;
+
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async {
+        await Future.delayed(const Duration(seconds: 1));
+      },
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+        itemCount: posts.length + (missed ? 1 : 0),
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (ctx, i) {
+          if (missed && i == 0) {
+            return _WhatYouMissedCard(posts: _missedPosts, onDismiss: onDismissMissed ?? () {});
+          }
+          final idx = missed ? i - 1 : i;
+          return _PostCard(post: posts[idx], onUpdate: onUpdate);
+        },
+      ),
+    );
+  }
+}
+
+// ── What You Missed Carousel ──────────────────────────────────
+class _WhatYouMissedCard extends StatelessWidget {
+  final List<FeedPost> posts;
+  final VoidCallback onDismiss;
+  const _WhatYouMissedCard({required this.posts, required this.onDismiss});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = C(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: c.border),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('What you missed', style: TextStyle(color: c.textPrimary, fontSize: 13.5, fontWeight: FontWeight.w700)),
+              const Spacer(),
+              GestureDetector(
+                onTap: onDismiss,
+                child: Icon(Icons.close_rounded, color: c.textMuted, size: 18),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 120,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: posts.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (_, i) {
+                final post = posts[i];
+                final cat = findCategory(post.categoryId);
+                final author = findUser(post.authorId);
+                return Container(
+                  width: 180,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: c.surfaceElevated,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border(left: BorderSide(color: cat?.color ?? AppColors.primary, width: 3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          if (cat != null) Icon(cat.icon, color: cat.color, size: 13),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              author?.name ?? post.authorId,
+                              style: TextStyle(color: c.textPrimary, fontSize: 11.5, fontWeight: FontWeight.w700),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Expanded(
+                        child: Text(
+                          post.body,
+                          style: TextStyle(color: c.textSecondary, fontSize: 11.5, height: 1.4),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -226,17 +367,112 @@ class _PostCardState extends State<_PostCard> {
     });
   }
 
-  void _showReactionPicker() {
+  void _shareToChat(FeedPost post) {
+    final threads = kInitialThreads;
+    String? selectedThreadId;
+    final captionCtrl = TextEditingController();
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: C(context).surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setSheet) => DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.65,
+          builder: (_, ctrl) => Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text('Share to', style: TextStyle(color: C(context).textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+                ),
+                const Divider(),
+                Expanded(
+                  child: ListView.builder(
+                    controller: ctrl,
+                    itemCount: threads.length,
+                    itemBuilder: (_, i) {
+                      final t = threads[i];
+                      final name = t.isGroup ? (t.groupName ?? 'Group') : (() {
+                        final otherId = t.participantIds.firstWhere((id) => id != kCurrentUser.id, orElse: () => t.participantIds.first);
+                        return findUser(otherId)?.name ?? otherId;
+                      })();
+                      final sel = selectedThreadId == t.id;
+                      return ListTile(
+                        leading: t.isGroup
+                            ? GroupAvatar(color: t.groupColor ?? AppColors.primary, initials: (t.groupName ?? 'G').substring(0, 1), size: 40)
+                            : UserAvatar(userId: t.participantIds.firstWhere((id) => id != kCurrentUser.id, orElse: () => t.participantIds.first), size: 40),
+                        title: Text(name, style: TextStyle(color: C(context).textPrimary, fontSize: 14)),
+                        trailing: sel ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryLight) : null,
+                        onTap: () => setSheet(() => selectedThreadId = t.id),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: TextField(
+                    controller: captionCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Add a caption...',
+                      hintStyle: TextStyle(color: C(context).textMuted),
+                    ),
+                    style: TextStyle(color: C(context).textPrimary),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: selectedThreadId == null ? null : () {
+                        final thread = threads.firstWhere((t) => t.id == selectedThreadId);
+                        final caption = captionCtrl.text.trim();
+                        final shareText = '📢 Shared a post: "${post.body.substring(0, post.body.length > 60 ? 60 : post.body.length)}..."${caption.isNotEmpty ? '\n$caption' : ''}';
+                        thread.messages.add(ChatMessage(
+                          id: 'msg-${DateTime.now().millisecondsSinceEpoch}',
+                          senderId: kCurrentUser.id,
+                          text: shareText,
+                          timestamp: DateTime.now(),
+                        ));
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Post shared!'), backgroundColor: AppColors.primary),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Share', style: TextStyle(fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showReactionPicker() {
+    final c = C(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: c.surface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (_) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('React to this post', style: TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text('React to this post', style: TextStyle(color: c.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -255,6 +491,7 @@ class _PostCardState extends State<_PostCard> {
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     final cat = findCategory(p.categoryId);
     final author = findUser(p.authorId);
     final myReaction = p.reactions.where((r) => r.userId == kCurrentUser.id).firstOrNull?.type;
@@ -262,9 +499,9 @@ class _PostCardState extends State<_PostCard> {
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: c.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: p.isPinned ? AppColors.primary.withValues(alpha: 0.4) : AppColors.border),
+        border: Border.all(color: p.isPinned ? AppColors.primary.withValues(alpha: 0.4) : c.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,8 +536,8 @@ class _PostCardState extends State<_PostCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(author?.name ?? p.authorId, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                          Text('${author?.role ?? ''} · ${_timeAgo(p.createdAt)}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5)),
+                          Text(author?.name ?? p.authorId, style: TextStyle(color: c.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                          Text('${author?.role ?? ''} · ${_timeAgo(p.createdAt)}', style: TextStyle(color: c.textMuted, fontSize: 11.5)),
                         ],
                       ),
                     ),
@@ -326,7 +563,7 @@ class _PostCardState extends State<_PostCard> {
                 ),
                 const SizedBox(height: 12),
                 // Body
-                Text(p.body, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, height: 1.55)),
+                Text(p.body, style: TextStyle(color: c.textSecondary, fontSize: 14, height: 1.55)),
                 // Reaction summary
                 if (totalReactions > 0) ...[
                   const SizedBox(height: 10),
@@ -334,12 +571,12 @@ class _PostCardState extends State<_PostCard> {
                     children: [
                       _ReactionSummary(reactions: p.reactions),
                       const Spacer(),
-                      Text('${p.comments.length} comment${p.comments.length == 1 ? '' : 's'}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      Text('${p.comments.length} comment${p.comments.length == 1 ? '' : 's'}', style: TextStyle(color: c.textMuted, fontSize: 12)),
                     ],
                   ),
                 ],
                 const SizedBox(height: 10),
-                const Divider(color: AppColors.divider),
+                Divider(color: c.divider),
                 const SizedBox(height: 4),
                 // Action row
                 Row(
@@ -361,13 +598,13 @@ class _PostCardState extends State<_PostCard> {
                     _FeedActionBtn(
                       iconData: Icons.reply_rounded,
                       label: 'Share',
-                      onTap: () {},
+                      onTap: () => _shareToChat(p),
                     ),
                     const Spacer(),
                     IconButton(
                       icon: Icon(
                         p.isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                        color: p.isBookmarked ? AppColors.primaryLight : AppColors.textMuted,
+                        color: p.isBookmarked ? AppColors.primaryLight : c.textMuted,
                         size: 20,
                       ),
                       onPressed: _bookmark,
@@ -379,9 +616,9 @@ class _PostCardState extends State<_PostCard> {
                 // Comments section
                 if (_showComments) ...[
                   const SizedBox(height: 10),
-                  const Divider(color: AppColors.divider),
+                  Divider(color: c.divider),
                   const SizedBox(height: 10),
-                  ...p.comments.map((c) => _CommentTile(comment: c)),
+                  ...p.comments.map((cm) => _CommentTile(comment: cm)),
                   // Add comment input
                   Row(
                     children: [
@@ -390,13 +627,13 @@ class _PostCardState extends State<_PostCard> {
                       Expanded(
                         child: TextField(
                           controller: _commentCtrl,
-                          style: const TextStyle(color: Colors.white, fontSize: 13.5),
+                          style: TextStyle(color: c.textPrimary, fontSize: 13.5),
                           onSubmitted: (_) => _addComment(),
                           decoration: InputDecoration(
                             hintText: 'Add a comment…',
-                            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13.5),
+                            hintStyle: TextStyle(color: c.textMuted, fontSize: 13.5),
                             filled: true,
-                            fillColor: AppColors.bg,
+                            fillColor: c.bg,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                             suffixIcon: IconButton(
@@ -424,6 +661,7 @@ class _ReactionSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     final types = {'like': 0, 'insightful': 0, 'celebrate': 0};
     for (final r in reactions) {
       types[r.type] = (types[r.type] ?? 0) + 1;
@@ -436,7 +674,7 @@ class _ReactionSummary extends StatelessWidget {
       children: [
         ...shown.map((e) => Text(emojis[e.key]!, style: const TextStyle(fontSize: 14))),
         const SizedBox(width: 4),
-        Text('${reactions.length}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+        Text('${reactions.length}', style: TextStyle(color: c.textMuted, fontSize: 12)),
       ],
     );
   }
@@ -448,6 +686,7 @@ class _CommentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     final author = findUser(comment.authorId);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -462,18 +701,18 @@ class _CommentTile extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: c.bg, borderRadius: BorderRadius.circular(12)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(author?.name ?? comment.authorId, style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                      Text(author?.name ?? comment.authorId, style: TextStyle(color: c.textPrimary, fontSize: 12.5, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 2),
-                      Text(comment.text, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13.5, height: 1.4)),
+                      Text(comment.text, style: TextStyle(color: c.textSecondary, fontSize: 13.5, height: 1.4)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(DateFormat('h:mm a').format(comment.createdAt), style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                Text(DateFormat('h:mm a').format(comment.createdAt), style: TextStyle(color: c.textMuted, fontSize: 11)),
               ],
             ),
           ),
@@ -494,7 +733,8 @@ class _FeedActionBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? AppColors.primaryLight : AppColors.textMuted;
+    final c = C(context);
+    final color = active ? AppColors.primaryLight : c.textMuted;
     return GestureDetector(
       onTap: onTap,
       child: Padding(
@@ -521,222 +761,18 @@ class _ReactionButton extends StatelessWidget {
   const _ReactionButton({required this.emoji, required this.label, required this.type, required this.onTap});
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(emoji, style: const TextStyle(fontSize: 36)),
-        const SizedBox(height: 6),
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
-      ],
-    ),
-  );
-}
-
-// ── Post Composer ─────────────────────────────────────────────
-class _PostComposerSheet extends StatefulWidget {
-  final void Function(FeedPost) onPost;
-  const _PostComposerSheet({required this.onPost});
-
-  @override
-  State<_PostComposerSheet> createState() => _PostComposerSheetState();
-}
-
-class _PostComposerSheetState extends State<_PostComposerSheet> {
-  final _ctrl = TextEditingController();
-  String _categoryId = 'announcement';
-  PostAudience _audience = PostAudience.all;
-  PostPriority _priority = PostPriority.medium;
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  final _audienceLabels = {
-    PostAudience.all: 'Everyone',
-    PostAudience.sales: 'Sales Team',
-    PostAudience.admission: 'Admission Team',
-    PostAudience.leadership: 'Leadership',
-  };
-
-  void _publish() {
-    final text = _ctrl.text.trim();
-    if (text.isEmpty) return;
-    widget.onPost(FeedPost(
-      id: 'post-${DateTime.now().millisecondsSinceEpoch}',
-      authorId: kCurrentUser.id,
-      body: text,
-      createdAt: DateTime.now(),
-      categoryId: _categoryId,
-      audience: _audience,
-      priority: _priority,
-    ));
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final cat = findCategory(_categoryId)!;
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Text('New Post', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: _publish,
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  ),
-                  child: const Text('Publish', style: TextStyle(fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            UserAvatar(userId: kCurrentUser.id, size: 38),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _ctrl,
-              style: const TextStyle(color: Colors.white, fontSize: 15),
-              maxLines: 4,
-              autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'What\'s on your mind?',
-                filled: false,
-                border: InputBorder.none,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Meta chips
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _MetaChip(
-                    icon: cat.icon,
-                    label: cat.label,
-                    color: cat.color,
-                    onTap: () => _showCategoryPicker(),
-                  ),
-                  const SizedBox(width: 8),
-                  _MetaChip(
-                    icon: Icons.group_rounded,
-                    label: _audienceLabels[_audience]!,
-                    color: AppColors.textSecondary,
-                    onTap: () => _showAudiencePicker(),
-                  ),
-                  const SizedBox(width: 8),
-                  _MetaChip(
-                    icon: Icons.flag_rounded,
-                    label: _priority.name[0].toUpperCase() + _priority.name.substring(1),
-                    color: _priority == PostPriority.high ? AppColors.danger : _priority == PostPriority.medium ? AppColors.warn : AppColors.textMuted,
-                    onTap: () => _showPriorityPicker(),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
+    final c = C(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 36)),
+          const SizedBox(height: 6),
+          Text(label, style: TextStyle(color: c.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+        ],
       ),
     );
   }
-
-  void _showCategoryPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        itemCount: kPostCategories.length,
-        itemBuilder: (_, i) {
-          final cat = kPostCategories[i];
-          return ListTile(
-            leading: Icon(cat.icon, color: cat.color),
-            title: Text(cat.label, style: const TextStyle(color: Colors.white)),
-            trailing: _categoryId == cat.id ? const Icon(Icons.check_rounded, color: AppColors.primaryLight) : null,
-            onTap: () { setState(() => _categoryId = cat.id); Navigator.pop(context); },
-          );
-        },
-      ),
-    );
-  }
-
-  void _showAudiencePicker() {
-    final opts = [PostAudience.all, PostAudience.sales, PostAudience.admission, PostAudience.leadership];
-    final labels = {PostAudience.all: 'Everyone', PostAudience.sales: 'Sales Team', PostAudience.admission: 'Admission Team', PostAudience.leadership: 'Leadership'};
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => ListView(
-        shrinkWrap: true,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: opts.map((a) => ListTile(
-          leading: const Icon(Icons.group_rounded, color: AppColors.textSecondary),
-          title: Text(labels[a]!, style: const TextStyle(color: Colors.white)),
-          trailing: _audience == a ? const Icon(Icons.check_rounded, color: AppColors.primaryLight) : null,
-          onTap: () { setState(() => _audience = a); Navigator.pop(context); },
-        )).toList(),
-      ),
-    );
-  }
-
-  void _showPriorityPicker() {
-    final opts = [PostPriority.high, PostPriority.medium, PostPriority.low];
-    final colors = {PostPriority.high: AppColors.danger, PostPriority.medium: AppColors.warn, PostPriority.low: AppColors.textMuted};
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => ListView(
-        shrinkWrap: true,
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: opts.map((pri) => ListTile(
-          leading: Icon(Icons.flag_rounded, color: colors[pri]),
-          title: Text('${pri.name[0].toUpperCase()}${pri.name.substring(1)} Priority', style: const TextStyle(color: Colors.white)),
-          trailing: _priority == pri ? const Icon(Icons.check_rounded, color: AppColors.primaryLight) : null,
-          onTap: () { setState(() => _priority = pri); Navigator.pop(context); },
-        )).toList(),
-      ),
-    );
-  }
-}
-
-class _MetaChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-  const _MetaChip({required this.icon, required this.label, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: color, size: 14),
-        const SizedBox(width: 6),
-        Text(label, style: TextStyle(color: color, fontSize: 12.5, fontWeight: FontWeight.w600)),
-        const SizedBox(width: 4),
-        Icon(Icons.keyboard_arrow_down_rounded, color: color, size: 14),
-      ]),
-    ),
-  );
 }
