@@ -153,40 +153,11 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
 
-                    // Header: logo left + student right (no clipping, proper face visible)
+                    // Logo — centred, rendered as Flutter CustomPainter (no image box)
                     SizedBox(
                       width: w,
-                      height: h * 0.38,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          // Student image — right half, full image, head fully visible
-                          Positioned(
-                            right: 0,
-                            top: -20,  // extend slightly above so head isn't cut
-                            child: Opacity(
-                              opacity: 0.7,
-                              child: Image.asset(
-                                'assets/images/login_image_men.png',
-                                width: w * 0.50,
-                                height: h * 0.40,
-                                fit: BoxFit.cover,
-                                alignment: Alignment.topRight,
-                              ),
-                            ),
-                          ),
-                          // UAPP logo (logo_app.png — fully transparent bg, orange+teal)
-                          Positioned(
-                            left: w * 0.04,
-                            bottom: 20,
-                            child: Image.asset(
-                              'assets/images/logo_app.png',
-                              width: w * 0.50,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                        ],
-                      ),
+                      height: h * 0.30,
+                      child: const Center(child: _UAPPLogo3D()),
                     ),
 
                     // Form
