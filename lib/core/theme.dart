@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 
 // ── Static brand tokens ────────────────────────────────────────
 class AppColors {
-  // Brand (theme-invariant)
-  static const primary       = Color(0xFF008F91);
-  static const primaryLight  = Color(0xFF05BEC0);
-  static const primaryDark   = Color(0xFF006567);
-  static const primaryFaint  = Color(0x1A008F91);
-  static const primaryBorder = Color(0x37008F91);
+  // Brand (theme-invariant) — real UAPP brand colours from CRM app
+  static const primary       = Color(0xFF045D5E); // real brand dark teal
+  static const primaryLight  = Color(0xFF019088); // lighter teal
+  static const primaryDark   = Color(0xFF033F40);
+  static const primaryFaint  = Color(0x1A045D5E);
+  static const primaryBorder = Color(0x37045D5E);
   static const orange        = Color(0xFFFC7300);
   static const orangeFaint   = Color(0x1AFC7300);
   static const online        = Color(0xFF40E080);
@@ -27,7 +27,7 @@ class AppColors {
   static const textHint        = Color(0xFF3A4A4C);
   static const border          = Color(0xFF0D3235);
   static const divider         = Color(0xFF0A2527);
-  static const ownBubble       = Color(0xFF005F61);
+  static const ownBubble       = Color(0xFF045D5E);  // real brand teal
   static const otherBubble     = Color(0xFF1A2E30);
 }
 

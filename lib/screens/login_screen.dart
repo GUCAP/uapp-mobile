@@ -106,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen>
         opacity: _entryAnim,
         child: Stack(
           children: [
-            // ── Background: black base + top-right cyan glow ──────
+            // ── Background gradient ───────────────────────────────
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -153,11 +153,34 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
 
-                    // UAPP Logo — centered, large
+                    // Real UAPP logo from CRM app (orange cap + white 3D U)
                     SizedBox(
                       width: w,
-                      height: h * 0.32,
-                      child: const Center(child: _UAPPLogo3D()),
+                      height: h * 0.30,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Student image on the right (decorative)
+                          Positioned(
+                            right: -10,
+                            bottom: 0,
+                            child: Opacity(
+                              opacity: 0.55,
+                              child: Image.asset(
+                                'assets/images/login_image_men.png',
+                                height: h * 0.28,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                          ),
+                          // Real logo centered
+                          Image.asset(
+                            'assets/images/logo_color.png',
+                            width: w * 0.42,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
+                      ),
                     ),
 
                     // Form
