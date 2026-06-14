@@ -106,8 +106,6 @@ class _NewsFeedScreenState extends State<NewsFeedScreen>
       children: [
         Text('News Feed', style: TextStyle(color: c.textPrimary, fontSize: 26, fontWeight: FontWeight.w700)),
         const Spacer(),
-        IconButton(icon: Icon(Icons.tune_rounded, color: c.textSecondary, size: 22), onPressed: () {}),
-        const SizedBox(width: 6),
         const TopBarActions(),
       ],
     ),
