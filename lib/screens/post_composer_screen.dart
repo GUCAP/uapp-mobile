@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../core/theme.dart';
+import '../core/translations.dart';
 import '../data/mock_data.dart';
 import '../models/post.dart';
 import '../models/user.dart';
@@ -47,6 +49,10 @@ class _PostComposerScreenState extends State<PostComposerScreen> {
   bool _showPhotoPicker = false;
   final List<int> _selectedPhotos = [];
 
+  // Schedule feature
+  bool _isScheduled = false;
+  DateTime? _scheduledAt;
+
   bool get _canPost => _bodyCtrl.text.trim().isNotEmpty;
 
   final _audienceLabels = {
@@ -89,37 +95,108 @@ class _PostComposerScreenState extends State<PostComposerScreen> {
     Navigator.pop(context);
   }
 
+  Future<void> _pickScheduleDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(hours: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (_, child) => Theme(
+        data: Theme.of(context).copyWith(colorScheme: const ColorScheme.dark(primary: AppColors.primary, surface: Color(0xFF021D1F))),
+        child: child!,
+      ),
+    );
+    if (date == null) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(DateTime.now().add(const Duration(hours: 1))),
+      builder: (_, child) => Theme(
+        data: Theme.of(context).copyWith(colorScheme: const ColorScheme.dark(primary: AppColors.primary, surface: Color(0xFF021D1F))),
+        child: child!,
+      ),
+    );
+    if (time == null) return;
+    setState(() => _scheduledAt = DateTime(date.year, date.month, date.day, time.hour, time.minute));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     final cat = findCategory(_categoryId)!;
     final aud = _audienceLabels[_audience]!;
+    final btnLabel = _isScheduled ? t('schedule_post') : t('post_btn');
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      // Header
+      backgroundColor: c.bg,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: c.surface,
         elevation: 0,
         leadingWidth: 80,
         leading: TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary, fontSize: 15)),
+          child: Text(t('cancel'), style: TextStyle(color: c.textSecondary, fontSize: 15)),
         ),
         centerTitle: true,
-        title: const Text('Create Post', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+        title: Text(t('create_post'), style: TextStyle(color: c.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(44),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                // Post now / Schedule toggle
+                GestureDetector(
+                  onTap: () => setState(() { _isScheduled = false; _scheduledAt = null; }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: !_isScheduled ? AppColors.primary : c.surfaceElevated,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(t('post_now'), style: TextStyle(color: !_isScheduled ? Colors.white : c.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () async {
+                    setState(() => _isScheduled = true);
+                    await _pickScheduleDateTime();
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: _isScheduled ? AppColors.orange : c.surfaceElevated,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.schedule_rounded, size: 14, color: Colors.white),
+                      const SizedBox(width: 5),
+                      Text(
+                        _scheduledAt != null ? DateFormat('d MMM, h:mm a').format(_scheduledAt!) : t('schedule_post'),
+                        style: TextStyle(color: _isScheduled ? Colors.white : c.textMuted, fontSize: 12.5, fontWeight: FontWeight.w600),
+                      ),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
             child: ElevatedButton(
               onPressed: _canPost ? _publish : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _canPost ? AppColors.primary : AppColors.surfaceElevated,
+                backgroundColor: _canPost ? (_isScheduled ? AppColors.orange : AppColors.primary) : c.surfaceElevated,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
-              child: Text('Post', style: TextStyle(fontWeight: FontWeight.w700, color: _canPost ? Colors.white : AppColors.textMuted)),
+              child: Text(btnLabel, style: TextStyle(fontWeight: FontWeight.w700, color: _canPost ? Colors.white : c.textMuted)),
             ),
           ),
         ],

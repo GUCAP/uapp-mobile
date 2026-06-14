@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/theme.dart';
+import 'core/app_state.dart';
+import 'core/translations.dart';
 import 'data/mock_data.dart';
 import 'screens/news_feed_screen.dart';
 import 'screens/chat_list_screen.dart';
@@ -10,12 +12,6 @@ import 'screens/availability_screen.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarBrightness: Brightness.dark,
-    statusBarIconBrightness: Brightness.light,
-    statusBarColor: Colors.transparent,
-    systemNavigationBarColor: AppColors.surface,
-  ));
   runApp(const UAppMobile());
 }
 
@@ -24,11 +20,19 @@ class UAppMobile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'UAPP',
-      debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
-      home: const _Shell(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: themeNotifier,
+      builder: (_, mode, __) => ValueListenableBuilder<String>(
+        valueListenable: languageNotifier,
+        builder: (_, __, ___) => MaterialApp(
+          title: 'UAPP',
+          debugShowCheckedModeBanner: false,
+          theme: buildLightTheme(),
+          darkTheme: buildAppTheme(),
+          themeMode: mode,
+          home: const _Shell(),
+        ),
+      ),
     );
   }
 }
@@ -52,49 +56,28 @@ class _ShellState extends State<_Shell> {
 
   @override
   Widget build(BuildContext context) {
-    final msgUnread = kInitialThreads.fold<int>(0, (s, t) => s + t.unreadCount);
+    final c = C(context);
+    final msgUnread = kInitialThreads.fold<int>(0, (s, x) => s + x.unreadCount);
 
     return Scaffold(
       body: IndexedStack(index: _tab, children: _screens),
-      bottomNavigationBar: _BottomNav(
-        currentIndex: _tab,
-        msgUnread: msgUnread,
-        onTap: (i) => setState(() => _tab = i),
-      ),
-    );
-  }
-}
-
-// ── Bottom navigation — 4 tabs ────────────────────────────────
-class _BottomNav extends StatelessWidget {
-  final int currentIndex;
-  final int msgUnread;
-  final void Function(int) onTap;
-
-  const _BottomNav({
-    required this.currentIndex,
-    required this.msgUnread,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(
-            children: [
-              _NavItem(icon: Icons.newspaper_outlined,         activeIcon: Icons.newspaper_rounded,           label: 'Feed',         selected: currentIndex == 0, onTap: () => onTap(0)),
-              _NavItem(icon: Icons.chat_bubble_outline_rounded, activeIcon: Icons.chat_bubble_rounded,        label: 'Messages',     selected: currentIndex == 1, onTap: () => onTap(1), badge: msgUnread > 0 ? msgUnread : null),
-              _NavItem(icon: Icons.calendar_month_outlined,    activeIcon: Icons.calendar_month_rounded,      label: 'Schedule',     selected: currentIndex == 2, onTap: () => onTap(2)),
-              _NavItem(icon: Icons.access_time_outlined,       activeIcon: Icons.access_time_filled_rounded,  label: 'Availability', selected: currentIndex == 3, onTap: () => onTap(3)),
-            ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: c.surface,
+          border: Border(top: BorderSide(color: c.border, width: 1)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 60,
+            child: Row(
+              children: [
+                _NavItem(icon: Icons.newspaper_outlined,          activeIcon: Icons.newspaper_rounded,           label: t('nav_feed'),         selected: _tab == 0, onTap: () => setState(() => _tab = 0)),
+                _NavItem(icon: Icons.chat_bubble_outline_rounded, activeIcon: Icons.chat_bubble_rounded,         label: t('nav_messages'),     selected: _tab == 1, onTap: () => setState(() => _tab = 1), badge: msgUnread > 0 ? msgUnread : null),
+                _NavItem(icon: Icons.calendar_month_outlined,     activeIcon: Icons.calendar_month_rounded,      label: t('nav_schedule'),     selected: _tab == 2, onTap: () => setState(() => _tab = 2)),
+                _NavItem(icon: Icons.access_time_outlined,        activeIcon: Icons.access_time_filled_rounded,  label: t('nav_availability'), selected: _tab == 3, onTap: () => setState(() => _tab = 3)),
+              ],
+            ),
           ),
         ),
       ),
@@ -111,18 +94,13 @@ class _NavItem extends StatelessWidget {
   final int? badge;
 
   const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.badge,
+    required this.icon, required this.activeIcon, required this.label,
+    required this.selected, required this.onTap, this.badge,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.primaryLight : AppColors.textMuted;
-
+    final color = selected ? AppColors.primaryLight : C(context).textMuted;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -136,39 +114,21 @@ class _NavItem extends StatelessWidget {
               children: [
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    selected ? activeIcon : icon,
-                    key: ValueKey(selected),
-                    color: color,
-                    size: 26,
-                  ),
+                  child: Icon(selected ? activeIcon : icon, key: ValueKey(selected), color: color, size: 26),
                 ),
                 if (badge != null && badge! > 0)
                   Positioned(
                     right: -10, top: -6,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: AppColors.badgeBg,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        badge! > 99 ? '99+' : '$badge',
-                        style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w700),
-                      ),
+                      decoration: BoxDecoration(color: AppColors.badgeBg, borderRadius: BorderRadius.circular(999)),
+                      child: Text(badge! > 99 ? '99+' : '$badge', style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.w700)),
                     ),
                   ),
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 10.5,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
+            Text(label, style: TextStyle(color: color, fontSize: 10.5, fontWeight: selected ? FontWeight.w600 : FontWeight.normal)),
           ],
         ),
       ),

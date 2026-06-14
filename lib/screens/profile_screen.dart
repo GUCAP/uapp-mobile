@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
+import '../core/app_state.dart';
+import '../core/translations.dart';
 import '../data/mock_data.dart';
 import '../widgets/user_avatar.dart';
 import 'notifications_screen.dart';
@@ -14,17 +16,61 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _darkMode = true;
-
   void _push(Widget screen) => Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+
+  void _showLanguagePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: C(context).surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setSheet) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(t('language'), style: TextStyle(color: C(context).textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+            ),
+            const Divider(),
+            ...kLanguages.map((lang) {
+              final selected = languageNotifier.value == lang['code'];
+              return ListTile(
+                leading: Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: selected ? AppColors.primaryFaint : C(context).surfaceElevated,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(lang['native']!.substring(0, 1), style: TextStyle(color: selected ? AppColors.primaryLight : C(context).textMuted, fontWeight: FontWeight.w700, fontSize: 16)),
+                ),
+                title: Text(lang['label']!, style: TextStyle(color: C(context).textPrimary, fontSize: 15)),
+                subtitle: Text(lang['native']!, style: TextStyle(color: C(context).textMuted, fontSize: 12)),
+                trailing: selected ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryLight) : null,
+                onTap: () {
+                  setLanguage(lang['code']!);
+                  setState(() {});
+                  Navigator.pop(context);
+                },
+              );
+            }),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final c = C(context);
     final user = kCurrentUser;
     final unread = kUnreadNotificationCount;
+    final dark = isDarkMode;
+    final currentLang = kLanguages.firstWhere((l) => l['code'] == languageNotifier.value);
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: c.bg,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -33,13 +79,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Row(
                 children: [
-                  const Text('Profile', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700)),
+                  Text(t('profile'), style: TextStyle(color: c.textPrimary, fontSize: 26, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   Stack(
                     clipBehavior: Clip.none,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary, size: 24),
+                        icon: Icon(Icons.notifications_outlined, color: c.textSecondary, size: 24),
                         onPressed: () => _push(const NotificationsScreen()),
                       ),
                       if (unread > 0)
@@ -47,7 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           right: 8, top: 8,
                           child: Container(
                             width: 16, height: 16,
-                            decoration: BoxDecoration(color: AppColors.danger, shape: BoxShape.circle, border: Border.all(color: AppColors.bg, width: 1.5)),
+                            decoration: BoxDecoration(color: AppColors.danger, shape: BoxShape.circle, border: Border.all(color: c.bg, width: 1.5)),
                             alignment: Alignment.center,
                             child: Text('$unread', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
                           ),
@@ -57,22 +103,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              // Avatar card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: c.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: c.border),
                 ),
                 child: Column(
                   children: [
                     UserAvatar(userId: user.id, size: 72, showOnline: true),
                     const SizedBox(height: 14),
-                    Text(user.name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700)),
+                    Text(user.name, style: TextStyle(color: c.textPrimary, fontSize: 20, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
-                    Text(user.role, style: const TextStyle(color: AppColors.textMuted, fontSize: 13.5)),
+                    Text(user.role, style: TextStyle(color: c.textMuted, fontSize: 13.5)),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -97,61 +142,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              _Section(label: 'ACCOUNT', items: [
-                _Item(icon: Icons.person_outline_rounded, label: 'Edit Profile', onTap: () {}),
-                _Item(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () => _showNotifications()),
-                _Item(icon: Icons.lock_outline_rounded, label: 'Privacy & Security', onTap: () {}),
+              _Section(label: 'ACCOUNT', c: c, items: [
+                _Item(icon: Icons.person_outline_rounded, label: t('edit_profile'), c: c, onTap: () {}),
+                _Item(icon: Icons.notifications_outlined, label: t('notifications_menu'), c: c, onTap: () => _push(const NotificationsScreen())),
+                _Item(icon: Icons.lock_outline_rounded, label: t('privacy_security'), c: c, onTap: () {}),
               ]),
               const SizedBox(height: 16),
-              _Section(label: 'PREFERENCES', items: [
+              _Section(label: 'PREFERENCES', c: c, items: [
                 _Item(
-                  icon: _darkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                  label: 'Dark Mode',
-                  onTap: () {},
+                  icon: dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                  label: t('dark_mode'),
+                  c: c,
+                  onTap: () { toggleTheme(); setState(() {}); },
                   trailing: Switch.adaptive(
-                    value: _darkMode,
-                    onChanged: (v) => setState(() => _darkMode = v),
+                    value: dark,
+                    onChanged: (_) { toggleTheme(); setState(() {}); },
                     activeThumbColor: AppColors.primaryLight,
                     activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
                   ),
                 ),
-                _Item(icon: Icons.language_rounded, label: 'Language', onTap: () {}, trailingLabel: 'English'),
-                _Item(icon: Icons.schedule_rounded, label: 'Work Hours & Timezone', onTap: () => _push(const TimezoneScreen())),
+                _Item(
+                  icon: Icons.language_rounded,
+                  label: t('language'),
+                  c: c,
+                  onTap: _showLanguagePicker,
+                  trailingLabel: currentLang['native'],
+                ),
+                _Item(icon: Icons.schedule_rounded, label: t('work_hours_tz'), c: c, onTap: () => _push(const TimezoneScreen())),
               ]),
               const SizedBox(height: 16),
-              // Full settings button
               GestureDetector(
                 onTap: () => _push(const SettingsScreen()),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: c.surface,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.primaryBorder),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.settings_rounded, color: AppColors.primaryLight, size: 22),
-                      SizedBox(width: 14),
+                      const Icon(Icons.settings_rounded, color: AppColors.primaryLight, size: 22),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Settings', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
-                            Text('User management, permissions, webhooks, feed preferences', style: TextStyle(color: AppColors.textMuted, fontSize: 11.5, height: 1.3)),
+                            Text(t('settings'), style: TextStyle(color: c.textPrimary, fontSize: 15, fontWeight: FontWeight.w600)),
+                            Text('User management, permissions, webhooks, feed preferences', style: TextStyle(color: c.textMuted, fontSize: 11.5, height: 1.3)),
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+                      Icon(Icons.chevron_right_rounded, color: c.textMuted, size: 20),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              _Section(label: 'SUPPORT', items: [
-                _Item(icon: Icons.help_outline_rounded, label: 'Help & Support', onTap: () {}),
-                _Item(icon: Icons.info_outline_rounded, label: 'About UAPP', onTap: () {}),
+              _Section(label: 'SUPPORT', c: c, items: [
+                _Item(icon: Icons.help_outline_rounded, label: 'Help & Support', c: c, onTap: () {}),
+                _Item(icon: Icons.info_outline_rounded, label: t('about'), c: c, onTap: () {}),
               ]),
               const SizedBox(height: 16),
               GestureDetector(
@@ -165,12 +216,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
                   ),
                   alignment: Alignment.center,
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.logout_rounded, color: AppColors.danger, size: 18),
-                      SizedBox(width: 8),
-                      Text('Sign Out', style: TextStyle(color: AppColors.danger, fontSize: 14, fontWeight: FontWeight.w600)),
+                      const Icon(Icons.logout_rounded, color: AppColors.danger, size: 18),
+                      const SizedBox(width: 8),
+                      Text(t('sign_out'), style: const TextStyle(color: AppColors.danger, fontSize: 14, fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
@@ -183,104 +234,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showNotifications() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.7,
-        builder: (_, ctrl) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Row(
-                children: [
-                  const Text('Notifications', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700)),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () { setState(() { for (final n in kNotifications) n.isRead = true; }); },
-                    child: const Text('Mark all read', style: TextStyle(color: AppColors.primaryLight, fontSize: 13)),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(color: AppColors.divider),
-            Expanded(
-              child: ListView.separated(
-                controller: ctrl,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                itemCount: kNotifications.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 6),
-                itemBuilder: (_, i) {
-                  final n = kNotifications[i];
-                  return GestureDetector(
-                    onTap: () => setState(() { n.isRead = true; }),
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: n.isRead ? Colors.transparent : AppColors.primaryFaint,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: n.isRead ? AppColors.border : AppColors.primary.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _NotifIcon(type: n.type),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(n.title, style: TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: n.isRead ? FontWeight.w500 : FontWeight.w700)),
-                                const SizedBox(height: 3),
-                                Text(n.body, style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5, height: 1.4)),
-                              ],
-                            ),
-                          ),
-                          if (!n.isRead)
-                            Container(width: 8, height: 8, margin: const EdgeInsets.only(top: 4), decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NotifIcon extends StatelessWidget {
-  final String type;
-  const _NotifIcon({required this.type});
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, color) = switch (type) {
-      'meeting_invite' => (Icons.video_call_rounded, AppColors.primary),
-      'mention' => (Icons.alternate_email_rounded, AppColors.primaryLight),
-      'reaction' => (Icons.thumb_up_rounded, AppColors.online),
-      _ => (Icons.notifications_rounded, AppColors.textMuted),
-    };
-    return Container(
-      width: 36, height: 36,
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-      alignment: Alignment.center,
-      child: Icon(icon, color: color, size: 18),
-    );
-  }
 }
 
 class _Section extends StatelessWidget {
   final String label;
   final List<_Item> items;
-  const _Section({required this.label, required this.items});
+  final AC c;
+  const _Section({required this.label, required this.items, required this.c});
 
   @override
   Widget build(BuildContext context) => Column(
@@ -288,15 +248,15 @@ class _Section extends StatelessWidget {
     children: [
       Padding(
         padding: const EdgeInsets.only(left: 4, bottom: 8),
-        child: Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
+        child: Text(label, style: TextStyle(color: c.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8)),
       ),
       Container(
-        decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
+        decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: c.border)),
         child: Column(
           children: [
             for (int i = 0; i < items.length; i++) ...[
               items[i],
-              if (i < items.length - 1) const Divider(height: 1, indent: 52, color: AppColors.divider),
+              if (i < items.length - 1) Divider(height: 1, indent: 52, color: c.divider),
             ],
           ],
         ),
@@ -311,7 +271,8 @@ class _Item extends StatelessWidget {
   final VoidCallback onTap;
   final String? trailingLabel;
   final Widget? trailing;
-  const _Item({required this.icon, required this.label, required this.onTap, this.trailingLabel, this.trailing});
+  final AC c;
+  const _Item({required this.icon, required this.label, required this.onTap, required this.c, this.trailingLabel, this.trailing});
 
   @override
   Widget build(BuildContext context) => InkWell(
@@ -323,14 +284,14 @@ class _Item extends StatelessWidget {
         children: [
           Icon(icon, color: AppColors.primary, size: 20),
           const SizedBox(width: 14),
-          Expanded(child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14.5))),
+          Expanded(child: Text(label, style: TextStyle(color: c.textPrimary, fontSize: 14.5))),
           if (trailing != null) trailing!
           else if (trailingLabel != null) ...[
-            Text(trailingLabel!, style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+            Text(trailingLabel!, style: TextStyle(color: c.textMuted, fontSize: 13)),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18),
+            Icon(Icons.chevron_right_rounded, color: c.textMuted, size: 18),
           ] else
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18),
+            Icon(Icons.chevron_right_rounded, color: c.textMuted, size: 18),
         ],
       ),
     ),
