@@ -12,7 +12,6 @@ void showFloatingReactions({
   late OverlayEntry entry;
 
   final triggerOffset = triggerBox.localToGlobal(Offset.zero);
-  final triggerSize   = triggerBox.size;
   final screenW       = MediaQuery.of(context).size.width;
 
   // Position the pill so it sits just above the trigger and doesn't overflow

@@ -3,7 +3,6 @@ import '../core/theme.dart';
 import '../core/app_state.dart';
 import '../core/translations.dart';
 import '../data/mock_data.dart';
-import '../models/user.dart';
 import '../widgets/user_avatar.dart';
 import 'notifications_screen.dart';
 import 'login_screen.dart';
@@ -51,47 +50,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing: selected ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryLight) : null,
                 onTap: () {
                   setLanguage(lang['code']!);
-                  setState(() {});
-                  Navigator.pop(context);
-                },
-              );
-            }),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAccountSwitcher() {
-    final nonStudents = kUsers.where((u) => u.type != UserType.student).take(5).toList();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: C(context).surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => StatefulBuilder(
-        builder: (ctx, setSheet) => Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text('Switch Account', style: TextStyle(color: C(context).textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
-            ),
-            const Divider(),
-            ...nonStudents.map((u) {
-              final selected = currentUserIdNotifier.value == u.id;
-              return ListTile(
-                leading: Container(
-                  width: 40, height: 40,
-                  decoration: BoxDecoration(color: u.color, shape: BoxShape.circle),
-                  alignment: Alignment.center,
-                  child: Text(u.initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-                ),
-                title: Text(u.name, style: TextStyle(color: C(context).textPrimary, fontSize: 14.5)),
-                subtitle: Text(u.role, style: TextStyle(color: C(context).textMuted, fontSize: 12)),
-                trailing: selected ? const Icon(Icons.check_circle_rounded, color: AppColors.primaryLight) : null,
-                onTap: () {
-                  currentUserIdNotifier.value = u.id;
                   setState(() {});
                   Navigator.pop(context);
                 },

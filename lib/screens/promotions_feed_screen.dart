@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../data/mock_data.dart';
 import '../models/post.dart';

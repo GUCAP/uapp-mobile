@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'core/theme.dart';
 import 'core/app_state.dart';
-import 'core/translations.dart';
 import 'screens/splash_screen.dart';
 
 void main() {

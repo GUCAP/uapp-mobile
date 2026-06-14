@@ -628,26 +628,3 @@ class _FeedActionBtn extends StatelessWidget {
   }
 }
 
-class _ReactionButton extends StatelessWidget {
-  final String emoji;
-  final String label;
-  final String type;
-  final VoidCallback onTap;
-  const _ReactionButton({required this.emoji, required this.label, required this.type, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = C(context);
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 36)),
-          const SizedBox(height: 6),
-          Text(label, style: TextStyle(color: c.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-}
