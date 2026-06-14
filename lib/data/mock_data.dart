@@ -549,40 +549,114 @@ class AppNotification {
 }
 
 List<AppNotification> kNotifications = [
+  // ── Today ─────────────────────────────────────────────────────
   AppNotification(
     id: 'n1', title: 'Meeting Invite',
-    body: 'Tousif Sadman invited you to a video call on Sun, 14 Jun at 4:45 PM',
+    body: 'Tousif Sadman invited you to a Video Call on Sun, 14 Jun at 4:45 PM',
     fromUserId: 'u-tousif',
     createdAt: DateTime.now().subtract(const Duration(minutes: 8)),
     type: 'meeting_invite',
   ),
   AppNotification(
     id: 'n2', title: 'New Reaction',
-    body: 'Andreea Cinpoi reacted 🎉 to your post about Middlesex University partnership',
+    body: 'Andreea Cinpoi reacted 🎉 to your post about the Middlesex University partnership',
     fromUserId: 'u-andreea',
     createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
-    type: 'reaction', isRead: true,
+    type: 'reaction',
   ),
   AppNotification(
     id: 'n3', title: 'You were mentioned',
-    body: 'Nur Mohammad mentioned you in the Admission Officers group',
+    body: 'Nur Mohammad mentioned you in the Admission Officers group: "Please review the latest docs @Shamim"',
     fromUserId: 'u-nur',
     createdAt: DateTime.now().subtract(const Duration(hours: 1)),
     type: 'mention',
   ),
   AppNotification(
-    id: 'n4', title: 'Commission Update',
-    body: 'New commission structure document is now available in your inbox',
-    fromUserId: null,
+    id: 'n6', title: 'New Comment',
+    body: 'Raj Ahmed commented on your post: "Huge win! Middlesex is a top choice for international students."',
+    fromUserId: 'u-raj',
+    createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+    type: 'comment', isRead: true,
+  ),
+  AppNotification(
+    id: 'n7', title: 'New Reaction',
+    body: 'Jennifer Aboje reacted 👍 to your post about the Q3 Sales Update',
+    fromUserId: 'u-jennifer',
     createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+    type: 'reaction', isRead: true,
+  ),
+  AppNotification(
+    id: 'n4', title: 'Commission Update',
+    body: 'New commission structure document is now available. Review it in Settings.',
+    fromUserId: null,
+    createdAt: DateTime.now().subtract(const Duration(hours: 4)),
     type: 'system', isRead: true,
   ),
   AppNotification(
     id: 'n5', title: 'Meeting Reminder',
-    body: 'Your consultation with Nur Mohammad starts in 30 minutes',
+    body: 'Your Consultation with Nur Mohammad starts in 30 minutes',
     fromUserId: 'u-nur',
     createdAt: DateTime.now().subtract(const Duration(hours: 5)),
     type: 'meeting_invite', isRead: true,
+  ),
+  // ── Yesterday ─────────────────────────────────────────────────
+  AppNotification(
+    id: 'n8', title: 'New Reaction',
+    body: 'Md Shamim and 3 others reacted 🎉 to your post about the Sales Team award',
+    fromUserId: 'u-md-shamim',
+    createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)),
+    type: 'reaction', isRead: true,
+  ),
+  AppNotification(
+    id: 'n9', title: 'Meeting Accepted',
+    body: 'Andreea Cinpoi accepted your Video Call invitation for Mon, 15 Jun at 10:00 AM',
+    fromUserId: 'u-andreea',
+    createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 4)),
+    type: 'meeting_invite', isRead: true,
+  ),
+  AppNotification(
+    id: 'n10', title: 'You were mentioned',
+    body: 'Laura Tomova mentioned you in the Sales Team group: "@Shamim the weekly target is met 🎯"',
+    fromUserId: 'u-laura',
+    createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 6)),
+    type: 'mention', isRead: true,
+  ),
+  // ── Earlier this week ─────────────────────────────────────────
+  AppNotification(
+    id: 'n11', title: 'New Comment',
+    body: 'Rakib commented on Jennifer\'s post: "Just submitted 4 more. Dashboard updated."',
+    fromUserId: 'u-rakib',
+    createdAt: DateTime.now().subtract(const Duration(days: 3)),
+    type: 'comment', isRead: true,
+  ),
+  AppNotification(
+    id: 'n12', title: 'System Update',
+    body: 'The new commission dashboard is now live. All sales team members can view earnings in real-time.',
+    fromUserId: null,
+    createdAt: DateTime.now().subtract(const Duration(days: 4)),
+    type: 'system', isRead: true,
+  ),
+  AppNotification(
+    id: 'n13', title: 'Meeting Invite',
+    body: 'Riad Hossain invited you to a Consultation on Fri, 12 Jun at 2:00 PM',
+    fromUserId: 'u-riad',
+    createdAt: DateTime.now().subtract(const Duration(days: 4, hours: 3)),
+    type: 'meeting_invite', isRead: true,
+  ),
+  // ── This month ────────────────────────────────────────────────
+  AppNotification(
+    id: 'n14', title: 'New Reaction',
+    body: 'Tousif Sadman reacted 💡 to your post about the September 2026 intake',
+    fromUserId: 'u-tousif',
+    createdAt: DateTime.now().subtract(const Duration(days: 8)),
+    type: 'reaction', isRead: true,
+  ),
+  AppNotification(
+    id: 'n15', title: 'System Update',
+    body: 'UAPP platform updated to v2.4. New features: bulk application export, webhook retry queue.',
+    fromUserId: null,
+    createdAt: DateTime.now().subtract(const Duration(days: 12)),
+    type: 'system', isRead: true,
   ),
 ];
 

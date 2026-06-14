@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/mock_data.dart';
 import '../widgets/user_avatar.dart';
+import 'notifications_screen.dart';
 import 'settings/settings_screen.dart';
 import 'settings/timezone_screen.dart';
 
@@ -39,7 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary, size: 24),
-                        onPressed: () => _showNotifications(),
+                        onPressed: () => _push(const NotificationsScreen()),
                       ),
                       if (unread > 0)
                         Positioned(

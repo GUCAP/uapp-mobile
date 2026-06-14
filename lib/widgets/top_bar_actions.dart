@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../data/mock_data.dart';
 import '../screens/profile_screen.dart';
+import '../screens/notifications_screen.dart';
 
 /// Notification bell + profile avatar — placed in the top-right of every
 /// main screen. Tapping the bell opens the notification panel; tapping the
@@ -23,7 +24,7 @@ class _TopBarActionsState extends State<TopBarActions> {
       children: [
         // Notification bell
         GestureDetector(
-          onTap: () => _showNotifications(context),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())).then((_) => setState(() {})),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
