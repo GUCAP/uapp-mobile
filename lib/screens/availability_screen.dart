@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../data/mock_data.dart';
+import '../widgets/top_bar_actions.dart';
 import '../models/meeting.dart';
 
 class AvailabilityScreen extends StatefulWidget {
@@ -67,17 +68,21 @@ class _AvailabilityScreenState extends State<AvailabilityScreen>
         const Text('My Schedule', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700)),
         const Spacer(),
         IconButton(
-          icon: const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary, size: 26),
+          icon: const Icon(Icons.chevron_left_rounded, color: AppColors.textSecondary, size: 24),
           onPressed: () => setState(() => _weekStart = _weekStart.subtract(const Duration(days: 7))),
+          padding: EdgeInsets.zero,
         ),
         Text(
-          '${DateFormat('d MMM').format(_weekDays.first)} – ${DateFormat('d MMM').format(_weekDays.last)}',
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          '${DateFormat('d MMM').format(_weekDays.first)}–${DateFormat('d MMM').format(_weekDays.last)}',
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         IconButton(
-          icon: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 26),
+          icon: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary, size: 24),
           onPressed: () => setState(() => _weekStart = _weekStart.add(const Duration(days: 7))),
+          padding: EdgeInsets.zero,
         ),
+        const SizedBox(width: 6),
+        const TopBarActions(),
       ],
     ),
   );

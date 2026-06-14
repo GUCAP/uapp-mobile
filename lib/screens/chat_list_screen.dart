@@ -5,6 +5,7 @@ import '../data/mock_data.dart';
 import '../models/message.dart';
 import '../models/user.dart';
 import '../widgets/user_avatar.dart';
+import '../widgets/top_bar_actions.dart';
 import 'chat_view_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -160,14 +161,7 @@ class _ChatListScreenState extends State<ChatListScreen>
             style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700),
           ),
           const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.search_rounded, color: AppColors.textSecondary, size: 24),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.video_call_rounded, color: AppColors.textSecondary, size: 24),
-            onPressed: () {},
-          ),
+          const TopBarActions(),
         ],
       ),
     );

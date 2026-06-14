@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../data/mock_data.dart';
 import '../models/meeting.dart';
+import '../widgets/top_bar_actions.dart';
 import '../widgets/user_avatar.dart';
 import 'schedule_call_screen.dart';
 
@@ -104,7 +105,7 @@ class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
       child: Row(
         children: [
           const Text(
@@ -115,7 +116,10 @@ class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
           IconButton(
             icon: const Icon(Icons.filter_list_rounded, color: AppColors.textSecondary, size: 22),
             onPressed: () {},
+            padding: EdgeInsets.zero,
           ),
+          const SizedBox(width: 6),
+          const TopBarActions(),
         ],
       ),
     );

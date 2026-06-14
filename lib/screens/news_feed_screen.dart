@@ -4,6 +4,7 @@ import '../core/theme.dart';
 import '../data/mock_data.dart';
 import '../models/post.dart';
 import '../widgets/user_avatar.dart';
+import '../widgets/top_bar_actions.dart';
 
 class NewsFeedScreen extends StatefulWidget {
   const NewsFeedScreen({super.key});
@@ -96,13 +97,14 @@ class _NewsFeedScreenState extends State<NewsFeedScreen>
   }
 
   Widget _buildHeader() => Padding(
-    padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+    padding: const EdgeInsets.fromLTRB(20, 16, 16, 8),
     child: Row(
       children: [
         const Text('News Feed', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w700)),
         const Spacer(),
-        IconButton(icon: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary, size: 24), onPressed: () {}),
         IconButton(icon: const Icon(Icons.tune_rounded, color: AppColors.textSecondary, size: 22), onPressed: () {}),
+        const SizedBox(width: 6),
+        const TopBarActions(),
       ],
     ),
   );
