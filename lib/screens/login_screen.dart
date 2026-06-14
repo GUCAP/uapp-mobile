@@ -141,15 +141,35 @@ class _LoginScreenState extends State<LoginScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Go Back
+                    // Go Back — clean arrow button
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: TextButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.auto_awesome_rounded, size: 16, color: Colors.white54),
-                        label: const Text('Go Back',
-                            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
-                        style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                      padding: const EdgeInsets.fromLTRB(12, 8, 16, 0),
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 36, height: 36,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                              ),
+                              child: const Icon(Icons.arrow_back_ios_new_rounded,
+                                  size: 16, color: Colors.white),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Go Back',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
 
