@@ -6,6 +6,7 @@ import '../models/post.dart';
 import '../models/message.dart';
 import '../widgets/user_avatar.dart';
 import '../widgets/top_bar_actions.dart';
+import '../widgets/floating_reaction_picker.dart';
 import 'post_composer_screen.dart';
 
 class NewsFeedScreen extends StatefulWidget {
@@ -351,31 +352,16 @@ class _PostCardState extends State<_PostCard> {
     );
   }
 
+  // Key attached to the React button so we can position the floating picker
+  final _reactBtnKey = GlobalKey();
+
   void _showReactionPicker() {
-    final c = C(context);
-    showModalBottomSheet(
+    final box = _reactBtnKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    showFloatingReactions(
       context: context,
-      backgroundColor: c.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('React to this post', style: TextStyle(color: c.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _ReactionButton(emoji: '👍', label: 'Like', type: 'like', onTap: () { Navigator.pop(context); _react('like'); }),
-                _ReactionButton(emoji: '💡', label: 'Insightful', type: 'insightful', onTap: () { Navigator.pop(context); _react('insightful'); }),
-                _ReactionButton(emoji: '🎉', label: 'Celebrate', type: 'celebrate', onTap: () { Navigator.pop(context); _react('celebrate'); }),
-              ],
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+      triggerBox: box,
+      reactions: buildReactions(onReact: _react),
     );
   }
 
@@ -472,6 +458,7 @@ class _PostCardState extends State<_PostCard> {
                 Row(
                   children: [
                     _FeedActionBtn(
+                      key: _reactBtnKey,
                       emoji: myReaction == 'like' ? '👍' : myReaction == 'insightful' ? '💡' : myReaction == 'celebrate' ? '🎉' : null,
                       iconData: myReaction == null ? Icons.thumb_up_outlined : null,
                       label: myReaction != null ? 'Reacted' : 'React',
@@ -619,7 +606,7 @@ class _FeedActionBtn extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
 
-  const _FeedActionBtn({this.emoji, this.iconData, required this.label, this.active = false, required this.onTap});
+  const _FeedActionBtn({super.key, this.emoji, this.iconData, required this.label, this.active = false, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

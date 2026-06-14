@@ -18,6 +18,7 @@ class ScheduledCallsScreen extends StatefulWidget {
 class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  MeetingType? _filterType; // null = All
 
   // Mock pending invites
   List<Meeting> _pendingInvites = [
@@ -50,7 +51,7 @@ class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
   }
 
   List<Meeting> _meetings(MeetingStatus status) {
-    return kMeetings.where((m) => m.status == status).toList()
+    return kMeetings.where((m) => m.status == status && (_filterType == null || m.type == _filterType)).toList()
       ..sort((a, b) => status == MeetingStatus.upcoming
           ? a.scheduledAt.compareTo(b.scheduledAt)
           : b.scheduledAt.compareTo(a.scheduledAt));
@@ -146,10 +147,21 @@ class _ScheduledCallsScreenState extends State<ScheduledCallsScreen>
             style: TextStyle(color: c.textPrimary, fontSize: 26, fontWeight: FontWeight.w700),
           ),
           const Spacer(),
-          IconButton(
-            icon: Icon(Icons.filter_list_rounded, color: c.textSecondary, size: 22),
-            onPressed: () {},
-            padding: EdgeInsets.zero,
+          PopupMenuButton<MeetingType?>(
+            icon: Icon(
+              Icons.filter_list_rounded,
+              color: _filterType != null ? AppColors.primaryLight : c.textSecondary,
+              size: 22,
+            ),
+            color: c.surface,
+            tooltip: 'Filter by type',
+            onSelected: (v) => setState(() => _filterType = v),
+            itemBuilder: (_) => [
+              PopupMenuItem(value: null, child: _FilterRow(icon: Icons.all_inclusive_rounded, label: 'All types', sel: _filterType == null, c: c)),
+              PopupMenuItem(value: MeetingType.video, child: _FilterRow(icon: Icons.video_call_rounded, label: 'Video Call', sel: _filterType == MeetingType.video, c: c)),
+              PopupMenuItem(value: MeetingType.audio, child: _FilterRow(icon: Icons.call_rounded, label: 'Voice Call', sel: _filterType == MeetingType.audio, c: c)),
+              PopupMenuItem(value: MeetingType.consultation, child: _FilterRow(icon: Icons.people_rounded, label: 'Consultation', sel: _filterType == MeetingType.consultation, c: c)),
+            ],
           ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: c.textSecondary, size: 22),
@@ -522,4 +534,22 @@ class _MeetingCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FilterRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool sel;
+  final AC c;
+  const _FilterRow({required this.icon, required this.label, required this.sel, required this.c});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(icon, color: sel ? AppColors.primaryLight : c.textMuted, size: 18),
+      const SizedBox(width: 10),
+      Text(label, style: TextStyle(color: sel ? AppColors.primaryLight : c.textPrimary, fontSize: 14, fontWeight: sel ? FontWeight.w600 : FontWeight.normal)),
+      if (sel) ...[const Spacer(), const Icon(Icons.check_rounded, color: AppColors.primaryLight, size: 16)],
+    ],
+  );
 }

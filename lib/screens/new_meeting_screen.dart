@@ -27,6 +27,12 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
   final List<String> _participants = [];
   bool _isRecurring = false;
   String _recurrence = 'Weekly';
+  // Weekly day-of-week selection (0=Mon … 6=Sun)
+  final Set<int> _weekDays = {0, 1, 2, 3, 4}; // Mon–Fri default
+  // End condition
+  String _endType = 'never'; // never | after | on
+  int _endAfter = 10;
+  DateTime _endDate = DateTime.now().add(const Duration(days: 90));
 
   bool get _canCreate =>
       _titleCtrl.text.trim().isNotEmpty && _participants.isNotEmpty;
@@ -296,6 +302,7 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border)),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
@@ -312,6 +319,10 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
                   ),
                   if (_isRecurring) ...[
                     const Divider(color: AppColors.divider),
+                    const SizedBox(height: 10),
+
+                    // Frequency chips
+                    const Text('Repeats', style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     Row(
                       children: ['Daily', 'Weekly', 'Monthly'].map((r) {
@@ -331,6 +342,86 @@ class _NewMeetingScreenState extends State<NewMeetingScreen> {
                           ),
                         );
                       }).toList(),
+                    ),
+
+                    // Weekly day-of-week picker
+                    if (_recurrence == 'Weekly') ...[
+                      const SizedBox(height: 14),
+                      const Text('Repeat on', style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(7, (i) {
+                          const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+                          final sel = _weekDays.contains(i);
+                          return GestureDetector(
+                            onTap: () => setState(() { sel ? _weekDays.remove(i) : _weekDays.add(i); }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 120),
+                              width: 36, height: 36,
+                              decoration: BoxDecoration(
+                                color: sel ? AppColors.primary : AppColors.surfaceElevated,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: sel ? AppColors.primary : AppColors.border),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(labels[i], style: TextStyle(color: sel ? Colors.white : AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w700)),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+
+                    // End condition
+                    const SizedBox(height: 14),
+                    const Text('Ends', style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    Column(
+                      children: [
+                        _EndOption(label: 'Never', value: 'never', group: _endType, onTap: () => setState(() => _endType = 'never')),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(child: _EndOption(label: 'After', value: 'after', group: _endType, onTap: () => setState(() => _endType = 'after'))),
+                            if (_endType == 'after') ...[
+                              const SizedBox(width: 10),
+                              SizedBox(
+                                width: 60,
+                                child: TextField(
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                                  decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8)),
+                                  controller: TextEditingController(text: '$_endAfter'),
+                                  onChanged: (v) => setState(() => _endAfter = int.tryParse(v) ?? _endAfter),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text('occurrences', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(child: _EndOption(label: 'On date', value: 'on', group: _endType, onTap: () => setState(() => _endType = 'on'))),
+                            if (_endType == 'on') ...[
+                              const SizedBox(width: 10),
+                              GestureDetector(
+                                onTap: () async {
+                                  final d = await showDatePicker(context: context, initialDate: _endDate, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 730)));
+                                  if (d != null) setState(() => _endDate = d);
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.primaryBorder)),
+                                  child: Text('${_endDate.day}/${_endDate.month}/${_endDate.year}', style: const TextStyle(color: AppColors.primaryLight, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -413,4 +504,36 @@ class _TypeChip extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _EndOption extends StatelessWidget {
+  final String label;
+  final String value;
+  final String group;
+  final VoidCallback onTap;
+  const _EndOption({required this.label, required this.value, required this.group, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final sel = value == group;
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            width: 18, height: 18,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: sel ? AppColors.primary : AppColors.textMuted, width: 2),
+              color: sel ? AppColors.primary : Colors.transparent,
+            ),
+            child: sel ? const Icon(Icons.check_rounded, size: 10, color: Colors.white) : null,
+          ),
+          const SizedBox(width: 8),
+          Text(label, style: TextStyle(color: sel ? Colors.white : AppColors.textMuted, fontSize: 13.5)),
+        ],
+      ),
+    );
+  }
 }

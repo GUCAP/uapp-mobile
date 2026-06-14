@@ -153,45 +153,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              // Account switcher row
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: c.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: c.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 28, height: 28,
-                      decoration: BoxDecoration(color: user.color, shape: BoxShape.circle),
-                      alignment: Alignment.center,
-                      child: Text(user.initials, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(user.name, style: TextStyle(color: c.textPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
-                          Text(user.role, style: TextStyle(color: c.textMuted, fontSize: 10)),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: _showAccountSwitcher,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        foregroundColor: AppColors.primaryLight,
-                        minimumSize: Size.zero,
-                      ),
-                      child: const Text('Switch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -311,6 +272,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const Icon(Icons.logout_rounded, color: AppColors.danger, size: 18),
                       const SizedBox(width: 8),
                       Text(t('sign_out'), style: const TextStyle(color: AppColors.danger, fontSize: 14, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Account switcher — below Sign Out
+              GestureDetector(
+                onTap: _showAccountSwitcher,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                  decoration: BoxDecoration(
+                    color: c.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: c.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32, height: 32,
+                        decoration: BoxDecoration(color: user.color, shape: BoxShape.circle),
+                        alignment: Alignment.center,
+                        child: Text(user.initials, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(user.name, style: TextStyle(color: c.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+                            Text(user.role, style: TextStyle(color: c.textMuted, fontSize: 11.5)),
+                          ],
+                        ),
+                      ),
+                      Text('Switch Account', style: TextStyle(color: AppColors.primaryLight, fontSize: 13, fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.swap_horiz_rounded, color: AppColors.primaryLight, size: 18),
                     ],
                   ),
                 ),
