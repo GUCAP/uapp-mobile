@@ -5,6 +5,7 @@ import '../data/mock_data.dart';
 import '../models/post.dart';
 import '../widgets/user_avatar.dart';
 import '../widgets/top_bar_actions.dart';
+import 'post_composer_screen.dart';
 
 class NewsFeedScreen extends StatefulWidget {
   const NewsFeedScreen({super.key});
@@ -59,6 +60,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen>
           children: [
             _buildHeader(),
             _buildTabs(),
+            _buildComposerBar(),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
@@ -73,25 +75,18 @@ class _NewsFeedScreenState extends State<NewsFeedScreen>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primary,
-        onPressed: () => _showComposer(),
-        child: const Icon(Icons.edit_rounded, color: Colors.white, size: 22),
-      ),
+      floatingActionButton: null,
     );
   }
 
   void _showComposer() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _PostComposerSheet(
-        onPost: (post) {
-          setState(() => kFeedPosts.insert(0, post));
-          Navigator.pop(context);
-        },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => PostComposerScreen(
+          onPost: (post) => setState(() => kFeedPosts.insert(0, post)),
+        ),
       ),
     );
   }
@@ -106,6 +101,34 @@ class _NewsFeedScreenState extends State<NewsFeedScreen>
         const SizedBox(width: 6),
         const TopBarActions(),
       ],
+    ),
+  );
+
+  Widget _buildComposerBar() => GestureDetector(
+    onTap: _showComposer,
+    child: Container(
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(color: kCurrentUser.color, borderRadius: BorderRadius.circular(10)),
+            alignment: Alignment.center,
+            child: Text(kCurrentUser.initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text("What's on your mind?", style: TextStyle(color: AppColors.textMuted, fontSize: 14.5)),
+          ),
+          const Icon(Icons.photo_library_outlined, color: AppColors.primaryLight, size: 22),
+        ],
+      ),
     ),
   );
 

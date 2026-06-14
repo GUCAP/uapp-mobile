@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../data/mock_data.dart';
 import '../widgets/top_bar_actions.dart';
+import 'new_meeting_screen.dart';
 import '../models/meeting.dart';
 
 class AvailabilityScreen extends StatefulWidget {
@@ -36,10 +37,27 @@ class _AvailabilityScreenState extends State<AvailabilityScreen>
     super.dispose();
   }
 
+  void _openNewMeeting() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => NewMeetingScreen(onCreated: (_) => setState(() {})),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.bg,
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_rounded, size: 22),
+        label: const Text('New Meeting', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5)),
+        onPressed: _openNewMeeting,
+      ),
       body: SafeArea(
         child: Column(
           children: [
