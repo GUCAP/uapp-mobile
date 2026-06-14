@@ -6,6 +6,7 @@ import '../data/mock_data.dart';
 import '../models/user.dart';
 import '../widgets/user_avatar.dart';
 import 'notifications_screen.dart';
+import 'login_screen.dart';
 import 'settings/settings_screen.dart';
 import 'settings/timezone_screen.dart';
 
@@ -256,7 +257,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ]),
               const SizedBox(height: 16),
               GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      backgroundColor: C(context).surface,
+                      title: Text(t('sign_out'), style: TextStyle(color: C(context).textPrimary, fontWeight: FontWeight.w700)),
+                      content: Text('Are you sure you want to sign out?', style: TextStyle(color: C(context).textSecondary)),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text('Cancel', style: TextStyle(color: C(context).textMuted)),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context); // close dialog
+                            // Clear session and go to Login
+                            currentUserIdNotifier.value = 'u-shamim';
+                            Navigator.of(context).pushAndRemoveUntil(
+                              PageRouteBuilder(
+                                pageBuilder: (_, __, ___) => const LoginScreen(),
+                                transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+                                transitionDuration: const Duration(milliseconds: 400),
+                              ),
+                              (_) => false,
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.danger,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                          ),
+                          child: Text(t('sign_out')),
+                        ),
+                      ],
+                    ),
+                  );
+                },
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 14),
