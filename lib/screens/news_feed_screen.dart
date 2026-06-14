@@ -324,7 +324,7 @@ class _PostCardState extends State<_PostCard> {
                       iconData: myReaction == null ? Icons.thumb_up_outlined : null,
                       label: myReaction != null ? 'Reacted' : 'React',
                       active: myReaction != null,
-                      onTap: () => myReaction != null ? _react(myReaction!) : _showReactionPicker(),
+                      onTap: () => myReaction != null ? _react(myReaction) : _showReactionPicker(),
                     ),
                     const SizedBox(width: 4),
                     _FeedActionBtn(

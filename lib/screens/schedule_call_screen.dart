@@ -27,7 +27,6 @@ class _ScheduleCallScreenState extends State<ScheduleCallScreen> {
   MeetingType _callType = MeetingType.video;
 
   List<int> get _daysInMonth {
-    final first = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
     final last = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0);
     return List.generate(last.day, (i) => i + 1);
   }

@@ -106,7 +106,7 @@ class _AppsTab extends StatelessWidget {
                   Switch.adaptive(
                     value: wh.installed,
                     onChanged: (_) => onToggle(wh.id),
-                    activeColor: AppColors.primaryLight,
+                    activeThumbColor: AppColors.primaryLight,
                     activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
                   ),
                 ],

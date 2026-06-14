@@ -132,7 +132,7 @@ class _ModuleSection extends StatelessWidget {
                       Switch.adaptive(
                         value: grants[permissions[i]] ?? false,
                         onChanged: readOnly ? null : (_) => onToggle(permissions[i]),
-                        activeColor: AppColors.primaryLight,
+                        activeThumbColor: AppColors.primaryLight,
                         activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
                       ),
                     ],

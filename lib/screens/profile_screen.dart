@@ -110,7 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   trailing: Switch.adaptive(
                     value: _darkMode,
                     onChanged: (v) => setState(() => _darkMode = v),
-                    activeColor: AppColors.primaryLight,
+                    activeThumbColor: AppColors.primaryLight,
                     activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
                   ),
                 ),

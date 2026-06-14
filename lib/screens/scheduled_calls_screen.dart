@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../data/mock_data.dart';
 import '../models/meeting.dart';
-import '../models/user.dart';
 import '../widgets/user_avatar.dart';
 import 'schedule_call_screen.dart';
 

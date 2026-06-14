@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
-import '../models/user.dart';
 import '../data/mock_data.dart';
 
 class UserAvatar extends StatelessWidget {

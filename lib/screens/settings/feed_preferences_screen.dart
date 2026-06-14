@@ -124,7 +124,7 @@ class _TopicsTab extends StatelessWidget {
               Switch.adaptive(
                 value: highPriorityOn,
                 onChanged: onHighPriority,
-                activeColor: AppColors.primaryLight,
+                activeThumbColor: AppColors.primaryLight,
                 activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
               ),
             ],

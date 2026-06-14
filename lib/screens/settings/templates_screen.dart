@@ -172,7 +172,7 @@ class _FieldList extends StatelessWidget {
               Switch.adaptive(
                 value: f.visible,
                 onChanged: (_) => onToggle(f),
-                activeColor: AppColors.primaryLight,
+                activeThumbColor: AppColors.primaryLight,
                 activeTrackColor: AppColors.primary.withValues(alpha: 0.4),
               ),
             ],
